@@ -1,0 +1,12 @@
+name: WonderEvents
+version: ${project.version}
+main: voiidstudios.wonderevents.WEBootstrap
+api-version: '1.20'
+author: ["Voiid Studios"]
+description: WonderEvents Core
+commands:
+  WonderEvents:
+    description: WonderEvents administration command
+    usage: /wonderevents <subcommand>
+    aliases:
+      - we
