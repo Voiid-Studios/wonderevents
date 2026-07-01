@@ -1,0 +1,34 @@
+command:
+  no_permissions: "&cYou don't have permissions to use this command."
+  unknown: "&cUnknown subcommand. Use /wonderevents help."
+  usage: "&eUse /wonderevents %COMMAND% for more information."
+
+  help:
+    header: "&7Running &dWonderEvents &bv%VERSION%"
+    line: "&2> &3/%COMMAND% &7- %DESCRIPTION%"
+
+  status:
+    header: "&7WonderEvents runtime status:"
+    expansions: "&8• &fExpansions: &d%EXPANSIONS%"
+    addons: "&8• &fAddons: &d%ADDONS%"
+    commands: "&8• &fCommands: &d%COMMANDS%"
+    modules: "&8• &fModules: &d%MODULES%"
+    listeners: "&8• &fListeners: &d%LISTENERS%"
+
+  reload:
+    start: "&7Reloading WonderEvents..."
+    config: "&aConfig reloaded."
+    messages: "&aMessages reloaded."
+    expansions: "&aExpansions reloaded: &d%EXPANSIONS%"
+    addons: "&aAddons reloaded: &d%ADDONS%"
+    done: "&aWonderEvents reloaded in &f%MS%ms"
+
+  addons:
+    header: "&7Loaded addons:"
+    empty: "&eNo addons are currently loaded."
+    line: "&8• &d%NAME% &7v%VERSION%&8 by &f%AUTHOR%"
+
+  expansions:
+    header: "&7Loaded expansions:"
+    empty: "&eNo expansions are currently loaded."
+    line: "&8• &d%ID% &7- &f%NAME% &8(&f%VERSION%&8)"

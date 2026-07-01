@@ -4,11 +4,14 @@ import org.bukkit.command.CommandSender;
 
 import voiidstudios.wonderevents.api.ZFCommand;
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.expansions.ExpansionDescriptor;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 
 public class CommandManager {
@@ -30,9 +33,16 @@ public class CommandManager {
                 "Shows the available WonderEvents commands.",
                 "wonderevents.admin",
                 (sender, args) -> {
-                    sender.sendMessage("§d§lWonderEvents §7- §fAvailable commands:");
+                    MessagesManager messages = context.getMessagesManager();
+                    Map<String, String> header = new HashMap<>();
+                    header.put("%VERSION%", context.getPlugin().getDescription().getVersion());
+                    messages.send(sender, "command.help.header", header);
+
                     for (ZFCommand command : commands) {
-                        sender.sendMessage(" §8• §d/" + getPrimaryName(command) + " §7- §f" + command.getDescription());
+                        Map<String, String> line = new HashMap<>();
+                        line.put("%COMMAND%", getPrimaryName(command));
+                        line.put("%DESCRIPTION%", Objects.toString(command.getDescription(), ""));
+                        messages.send(sender, "command.help.line", line);
                     }
                     return true;
                 },
@@ -44,12 +54,21 @@ public class CommandManager {
                 "Shows a small runtime summary of the core.",
                 "wonderevents.admin.status",
                 (sender, args) -> {
-                    sender.sendMessage("§d§lWonderEvents §7- §fRuntime status:");
-                    sender.sendMessage(" §8• §fExpansions: §d" + context.getExpansionManager().getLoadedDescriptors().size());
-                    sender.sendMessage(" §8• §fAddons: §d" + context.getAddonManager().getLoadedCount());
-                    sender.sendMessage(" §8• §fCommands: §d" + getLoadedCommandCount());
-                    sender.sendMessage(" §8• §fModules: §d" + context.getModuleManager().getLoadedModuleCount());
-                    sender.sendMessage(" §8• §fListeners: §d" + context.getEventManager().getRegisteredListenerCount());
+                    MessagesManager messages = context.getMessagesManager();
+                    messages.send(sender, "command.status.header");
+
+                    Map<String, String> values = new HashMap<>();
+                    values.put("%EXPANSIONS%", String.valueOf(getExpansionCount()));
+                    values.put("%ADDONS%", String.valueOf(getAddonCount()));
+                    values.put("%COMMANDS%", String.valueOf(getLoadedCommandCount()));
+                    values.put("%MODULES%", String.valueOf(context.getModuleManager().getLoadedModuleCount()));
+                    values.put("%LISTENERS%", String.valueOf(context.getEventManager().getRegisteredListenerCount()));
+
+                    messages.send(sender, "command.status.expansions", values);
+                    messages.send(sender, "command.status.addons", values);
+                    messages.send(sender, "command.status.commands", values);
+                    messages.send(sender, "command.status.modules", values);
+                    messages.send(sender, "command.status.listeners", values);
                     return true;
                 },
                 (sender, args) -> List.of()
@@ -60,8 +79,7 @@ public class CommandManager {
                 "Reloads configs, expansions and addons.",
                 "wonderevents.admin.reload",
                 (sender, args) -> {
-                    context.getPlugin().reloadWonderEvents();
-                    sender.sendMessage("§aWonderEvents reload requested.");
+                    context.getPlugin().reloadWonderEvents(sender);
                     return true;
                 },
                 (sender, args) -> List.of()
@@ -72,17 +90,22 @@ public class CommandManager {
                 "Lists all loaded addons.",
                 "wonderevents.admin.addons",
                 (sender, args) -> {
-                    var addonManager = context.getAddonManager();
-                    var descriptors = addonManager.getLoadedDescriptors();
+                    MessagesManager messages = context.getMessagesManager();
+                    List<?> descriptors = context.getAddonManager() == null ? Collections.emptyList() : context.getAddonManager().getLoadedDescriptors();
                     if (descriptors.isEmpty()) {
-                        sender.sendMessage("§eNo addons are currently loaded.");
+                        messages.send(sender, "command.addons.empty");
                         return true;
                     }
 
-                    sender.sendMessage("§d§lWonderEvents §7- §fLoaded addons:");
-                    for (var descriptor : descriptors) {
-                        sender.sendMessage(" §8• §d" + descriptor.getName() + " §7v" + descriptor.getVersion() +
-                                (descriptor.getAuthor().isBlank() ? "" : " §8by §f" + descriptor.getAuthor()));
+                    messages.send(sender, "command.addons.header");
+                    for (Object object : descriptors) {
+                        voiidstudios.wonderevents.addons.MagicAddonDescriptor descriptor =
+                                (voiidstudios.wonderevents.addons.MagicAddonDescriptor) object;
+                        Map<String, String> line = new HashMap<>();
+                        line.put("%NAME%", descriptor.getName());
+                        line.put("%VERSION%", descriptor.getVersion());
+                        line.put("%AUTHOR%", descriptor.getAuthor().isBlank() ? "Unknown" : descriptor.getAuthor());
+                        messages.send(sender, "command.addons.line", line);
                     }
                     return true;
                 },
@@ -94,16 +117,20 @@ public class CommandManager {
                 "Lists all loaded expansions.",
                 "wonderevents.admin.expansions",
                 (sender, args) -> {
-                    var expansionManager = context.getExpansionManager();
-                    var descriptors = expansionManager.getLoadedDescriptors();
+                    MessagesManager messages = context.getMessagesManager();
+                    List<ExpansionDescriptor> descriptors = context.getExpansionManager() == null ? Collections.emptyList() : context.getExpansionManager().getLoadedDescriptors();
                     if (descriptors.isEmpty()) {
-                        sender.sendMessage("§eNo expansions are currently loaded.");
+                        messages.send(sender, "command.expansions.empty");
                         return true;
                     }
 
-                    sender.sendMessage("§d§lWonderEvents §7- §fLoaded expansions:");
-                    for (var descriptor : descriptors) {
-                        sender.sendMessage(" §8• §d" + descriptor.getId() + " §7- §f" + descriptor.getName() + " §8(" + descriptor.getVersion() + ")");
+                    messages.send(sender, "command.expansions.header");
+                    for (ExpansionDescriptor descriptor : descriptors) {
+                        Map<String, String> line = new HashMap<>();
+                        line.put("%ID%", descriptor.getId());
+                        line.put("%NAME%", descriptor.getName());
+                        line.put("%VERSION%", descriptor.getVersion());
+                        messages.send(sender, "command.expansions.line", line);
                     }
                     return true;
                 },
@@ -136,7 +163,6 @@ public class CommandManager {
             return null;
         }
 
-        String normalized = name.toLowerCase(Locale.ROOT);
         for (ZFCommand command : commands) {
             if (command.getName().equalsIgnoreCase(name)) {
                 return command;
@@ -172,6 +198,14 @@ public class CommandManager {
         }
     }
 
+    private int getExpansionCount() {
+        return context.getExpansionManager() == null ? 0 : context.getExpansionManager().getLoadedDescriptors().size();
+    }
+
+    private int getAddonCount() {
+        return context.getAddonManager() == null ? 0 : context.getAddonManager().getLoadedCount();
+    }
+
     private static void addIfMatches(List<String> suggestions, String value, String prefix) {
         if (value == null) {
             return;
@@ -185,7 +219,7 @@ public class CommandManager {
     }
 
     private static String getPrimaryName(ZFCommand command) {
-        return Objects.requireNonNullElse(command.getName(), "unknown");
+        return command.getName() == null ? "unknown" : command.getName();
     }
 
     private record BaseCommand(

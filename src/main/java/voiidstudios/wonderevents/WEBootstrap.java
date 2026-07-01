@@ -1,6 +1,7 @@
 package voiidstudios.wonderevents;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -13,17 +14,17 @@ import voiidstudios.wonderevents.core.managers.MainCommandManager;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
 import voiidstudios.wonderevents.expansions.ExpansionManager;
 
-import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class WEBootstrap extends JavaPlugin {
     public String version = getDescription().getVersion();
 
     private static final String WE_LOADED_PROPERTY = "wonderevents.jvm.loaded";
-    private static final long UPDATE_CHECK_INTERVAL = 8L * 60L * 60L * 20L; // 8 horas
+    private static final long UPDATE_CHECK_INTERVAL = 8L * 60L * 60L * 20L; // 8 hours
 
     private final String serverName = Bukkit.getServer().getName();
     private final String bukkitVersion = Bukkit.getBukkitVersion();
@@ -43,13 +44,9 @@ public final class WEBootstrap extends JavaPlugin {
         long pluginStart = System.nanoTime();
 
         yaLogger = new YALogger(new JavaLoggerImpl(Bukkit.getServer().getLogger()), true);
-
         yaLogger.process("Warming up...");
 
         sendConsoleInformationMessage();
-
-        ensureFolders();
-        ensureCoreConfig();
 
         context = new PluginContext(this);
         metricsManager = new MetricsManager(context);
@@ -69,6 +66,7 @@ public final class WEBootstrap extends JavaPlugin {
         }
 
         expansionManager.loadExpansions();
+        expansionManager.enableExpansions();
         addonManager.loadAddons();
         addonManager.enableAddons();
 
@@ -84,42 +82,56 @@ public final class WEBootstrap extends JavaPlugin {
     }
 
     public void reloadWonderEvents() {
+        reloadWonderEvents(Bukkit.getConsoleSender());
+    }
+
+    public void reloadWonderEvents(CommandSender sender) {
         if (yaLogger == null || context == null) {
             return;
         }
 
         long start = System.nanoTime();
-        yaLogger.process("Reloading WonderEvents...");
-
-        if (addonManager != null) {
-            addonManager.disableAddons();
-        }
-        if (expansionManager != null) {
-            expansionManager.disableExpansions();
-        }
-
-        context.getConfigManager().reload();
+        var messages = context.getMessagesManager();
+        messages.send(sender, "command.reload.start");
 
         if (metricsManager != null) {
             metricsManager.stop();
-            if (context.getConfigManager().isBstatsMetricsEnabled()) {
-                metricsManager.start();
-            }
         }
+
+        context.getConfigManager().reload();
+        context.getMessagesManager().reload(context.getConfigManager().getLanguage());
 
         int loadedExpansions = 0;
         int loadedAddons = 0;
 
         if (expansionManager != null) {
-            loadedExpansions = expansionManager.loadExpansions();
+            loadedExpansions = expansionManager.reloadExpansions();
         }
         if (addonManager != null) {
-            loadedAddons = addonManager.loadAddons();
-            addonManager.enableAddons();
+            loadedAddons = addonManager.reloadAddons();
         }
 
-        long totalMs = elapsedMs(start);
-        yaLogger.success("§aWonderEvents reloaded §7(" + totalMs + "ms) §8| §fExpansions: §d" + loadedExpansions + " §8| §fAddons: §d" + loadedAddons);
+        if (metricsManager != null && context.getConfigManager().isBstatsMetricsEnabled()) {
+            metricsManager.start();
+        }
+
+        Map<String, String> reloadPlaceholders = new java.util.HashMap<>();
+        reloadPlaceholders.put("%CONFIG%", context.getConfigManager().getConfigFile().getName());
+        messages.send(sender, "command.reload.config", reloadPlaceholders);
+
+        messages.send(sender, "command.reload.messages");
+
+        Map<String, String> expPlaceholders = new java.util.HashMap<>();
+        expPlaceholders.put("%EXPANSIONS%", String.valueOf(loadedExpansions));
+        messages.send(sender, "command.reload.expansions", expPlaceholders);
+
+        Map<String, String> addonPlaceholders = new java.util.HashMap<>();
+        addonPlaceholders.put("%ADDONS%", String.valueOf(loadedAddons));
+        messages.send(sender, "command.reload.addons", addonPlaceholders);
+
+        Map<String, String> donePlaceholders = new java.util.HashMap<>();
+        donePlaceholders.put("%MS%", String.valueOf(elapsedMs(start)));
+        messages.send(sender, "command.reload.done", donePlaceholders);
     }
 
     private void registerMainCommand() {
@@ -137,7 +149,7 @@ public final class WEBootstrap extends JavaPlugin {
         return (System.nanoTime() - startNano) / 1_000_000L;
     }
 
-    public void sendConsoleInformationMessage(){
+    public void sendConsoleInformationMessage() {
         List<String> box = ConsoleBox.builder()
                 .borderColor("§d")
                 .title("§bWonderEvents")
@@ -149,7 +161,7 @@ public final class WEBootstrap extends JavaPlugin {
         box.forEach(yaLogger::info);
     }
 
-    private String dateText() { // totally useless, but cute :3
+    private String dateText() {
         LocalDate date = LocalDate.now();
 
         switch (date.getMonth()) {
@@ -207,26 +219,15 @@ public final class WEBootstrap extends JavaPlugin {
         }
     }
 
-    private void ensureFolders() {
-        File data = getDataFolder();
-        if (!data.exists()) data.mkdirs();
-        new File(data, "expansions").mkdirs();
-        new File(data, "addons").mkdirs();
-        new File(data, "configs").mkdirs();
-    }
-
-    private void ensureCoreConfig() {
-        File cfg = new File(new File(getDataFolder(), "configs"), "magic-config.yml");
-        if (!cfg.exists()) {
-            saveResource("configs/magic-config.yml", false);
-        }
-    }
-
     public YALogger getYALogger() {
         return yaLogger;
     }
 
     public PluginContext getPluginContext() {
         return context;
+    }
+
+    public WEBootstrap getCore() {
+        return this;
     }
 }

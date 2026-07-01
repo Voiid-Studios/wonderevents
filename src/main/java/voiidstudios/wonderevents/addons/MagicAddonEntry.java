@@ -1,39 +1,47 @@
 package voiidstudios.wonderevents.addons;
 
-import java.net.URLClassLoader;
+import org.bukkit.configuration.file.YamlConfiguration;
+
+import voiidstudios.wonderevents.api.WonderBootstrap;
+
 import java.io.IOException;
+import java.net.URLClassLoader;
 
 /**
- * Internal runtime record that keeps a loaded addon instance, its context,
- * and the class-loader together.
- *
- * <p>This is not part of the public addon API — addons never receive one of
- * these directly.
+ * Internal runtime record that keeps a loaded addon instance, its context, and
+ * the class-loader together.
  */
 final class MagicAddonEntry {
 
-    private final MagicAddon           addon;
-    private final MagicAddonContext    context;
-    private final URLClassLoader     classLoader;
+    private final WonderBootstrap addon;
+    private final MagicAddonContext context;
+    private final URLClassLoader classLoader;
     private final MagicAddonDescriptor descriptor;
 
     MagicAddonEntry(
-            MagicAddon           addon,
-            MagicAddonContext    context,
-            URLClassLoader     classLoader,
+            WonderBootstrap addon,
+            MagicAddonContext context,
+            URLClassLoader classLoader,
             MagicAddonDescriptor descriptor
     ) {
-        this.addon       = addon;
-        this.context     = context;
+        this.addon = addon;
+        this.context = context;
         this.classLoader = classLoader;
-        this.descriptor  = descriptor;
+        this.descriptor = descriptor;
     }
 
-    MagicAddon           getAddon()       { return addon; }
-    MagicAddonContext    getContext()      { return context; }
-    MagicAddonDescriptor getDescriptor()  { return descriptor; }
+    WonderBootstrap getAddon() {
+        return addon;
+    }
 
-    /** Closes the addon's URLClassLoader quietly (best-effort). */
+    MagicAddonContext getContext() {
+        return context;
+    }
+
+    MagicAddonDescriptor getDescriptor() {
+        return descriptor;
+    }
+
     void closeClassLoader() {
         try {
             classLoader.close();

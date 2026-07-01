@@ -5,6 +5,7 @@ import voiidstudios.wonderevents.addons.MagicAddonManager;
 import voiidstudios.wonderevents.core.managers.CommandManager;
 import voiidstudios.wonderevents.core.managers.ConfigManager;
 import voiidstudios.wonderevents.core.managers.EventManager;
+import voiidstudios.wonderevents.core.managers.MessagesManager;
 import voiidstudios.wonderevents.core.managers.ModuleManager;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
 import voiidstudios.wonderevents.core.platform.PaperPlatformAdapter;
@@ -17,6 +18,7 @@ import voiidstudios.wonderevents.expansions.ExpansionManager;
 public final class PluginContext {
     private final WEBootstrap plugin;
     private final ConfigManager configManager;
+    private final MessagesManager messagesManager;
     private final CommandManager commandManager;
     private final EventManager eventManager;
     private final ModuleManager moduleManager;
@@ -30,6 +32,8 @@ public final class PluginContext {
     public PluginContext(WEBootstrap plugin) {
         this.plugin = plugin;
         this.configManager = new ConfigManager(plugin);
+        this.configManager.bootstrap();
+        this.messagesManager = new MessagesManager(plugin, configManager.getLanguage(), plugin.getYALogger());
         this.commandManager = new CommandManager(this);
         this.eventManager = new EventManager(this);
         this.moduleManager = new ModuleManager(this);
@@ -47,6 +51,7 @@ public final class PluginContext {
     public WEBootstrap getPlugin() { return plugin; }
     public WEBootstrap getCore() { return plugin; }
     public ConfigManager getConfigManager() { return configManager; }
+    public MessagesManager getMessagesManager() { return messagesManager; }
     public CommandManager getCommandManager() { return commandManager; }
     public EventManager getEventManager() { return eventManager; }
     public ModuleManager getModuleManager() { return moduleManager; }

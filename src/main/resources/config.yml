@@ -1,0 +1,7 @@
+Config:
+  # Sends anonymous metrics to bStats
+  bstats_metrics: true
+
+Messages:
+  # Default language file located in messages/origins/<language>.yml
+  language: en_US

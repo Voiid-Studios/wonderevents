@@ -2,155 +2,64 @@ package voiidstudios.wonderevents.addons;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.event.HandlerList;
-import org.bukkit.event.Listener;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import voiidstudios.wonderevents.api.ZFCommand;
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
+import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.log.YALogger;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 /**
- * The context object passed to every addon during {@link MagicAddon#onLoad}.
+ * Addon-friendly extension of {@link WonderFeatureContext}.
  *
- * <p>Provides safe access to core infrastructure without exposing gameplay
- * internals.
+ * <p>It keeps the generic runtime helpers from the base context and adds a few
+ * addon-specific aliases so older addon code keeps reading naturally.
  */
-public final class MagicAddonContext {
+public class MagicAddonContext extends WonderFeatureContext {
 
-    private final PluginContext pluginContext;
-    private final MagicAddonDescriptor descriptor;
-    private final ClassLoader addonClassLoader;
-    private final File addonDataFolder;
-    private final YALogger logger;
-
-    /** Runtime registrations created by this addon and cleaned up on unload. */
-    private final List<Listener> registeredListeners = new ArrayList<>();
-    private final List<ZFCommand> registeredCommands = new ArrayList<>();
-
-    /** Cached YAML files keyed by relative file name (e.g. {@code "config.yml"}). */
-    private final Map<String, FileConfiguration> loadedConfigs = new HashMap<>();
-
-    MagicAddonContext(
+    public MagicAddonContext(
             PluginContext pluginContext,
-            MagicAddonDescriptor descriptor,
+            WonderManifest manifest,
             ClassLoader addonClassLoader,
             File addonDataFolder
     ) {
-        this.pluginContext     = pluginContext;
-        this.descriptor        = descriptor;
-        this.addonClassLoader  = addonClassLoader;
-        this.addonDataFolder   = addonDataFolder;
-        this.logger            = pluginContext.getPlugin().getYALogger();
+        super(pluginContext, manifest, addonClassLoader, addonDataFolder);
     }
-
-    // -------------------------------------------------------------------------
-    // Core access
-    // -------------------------------------------------------------------------
-
-    public PluginContext getPluginContext() {
-        return pluginContext;
-    }
-
-    public JavaPlugin getPlugin() {
-        return pluginContext.getPlugin();
-    }
-
-    public JavaPlugin getCore() {
-        return pluginContext.getPlugin();
-    }
-
-    public MagicAddonDescriptor getDescriptor() {
-        return descriptor;
-    }
-
-    // -------------------------------------------------------------------------
-    // Data folder & config
-    // -------------------------------------------------------------------------
 
     public File getAddonDataFolder() {
-        if (!addonDataFolder.exists()) {
-            addonDataFolder.mkdirs();
-        }
-        return addonDataFolder;
-    }
-
-    public FileConfiguration getConfig(String fileName) {
-        File file = new File(getAddonDataFolder(), fileName);
-        FileConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        loadedConfigs.put(fileName, cfg);
-        return cfg;
-    }
-
-    public void saveConfig(String fileName) {
-        FileConfiguration cfg = loadedConfigs.get(fileName);
-        if (cfg == null) {
-            logWarn("[" + descriptor.getName() + "] saveConfig: '" + fileName + "' todavia no estaba cargado");
-            return;
-        }
-        File file = new File(getAddonDataFolder(), fileName);
-        try {
-            cfg.save(file);
-        } catch (IOException e) {
-            logError("[" + descriptor.getName() + "] No pude guardar la config '" + fileName + "': " + e.getMessage());
-        }
-    }
-
-    public void saveResource(String resourcePath, boolean replace) {
-        File target = new File(getAddonDataFolder(), resourcePath);
-        if (target.exists() && !replace) {
-            return;
-        }
-
-        try (InputStream in = addonClassLoader.getResourceAsStream(resourcePath)) {
-            if (in == null) {
-                logWarn("[" + descriptor.getName() + "] No encontre el recurso en el jar del addon: " + resourcePath);
-                return;
-            }
-
-            target.getParentFile().mkdirs();
-            Files.copy(in, target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            logError("[" + descriptor.getName() + "] No pude guardar el recurso '" + resourcePath + "': " + e.getMessage());
-        }
-    }
-
-    public void reloadAddonConfigs() {
-        for (String fileName : loadedConfigs.keySet()) {
-            File file = new File(getAddonDataFolder(), fileName);
-            loadedConfigs.put(fileName, YamlConfiguration.loadConfiguration(file));
-        }
-    }
-
-    public void addConfigDefault(String fileName, String path, Object value) {
-        FileConfiguration cfg = loadedConfigs.computeIfAbsent(
-                fileName,
-                f -> YamlConfiguration.loadConfiguration(new File(getAddonDataFolder(), f))
-        );
-        cfg.addDefault(path, value);
-        cfg.options().copyDefaults(true);
+        return getDataFolder();
     }
 
     public File getPluginDataFolder() {
-        File pluginFolder = pluginContext.getPlugin().getDataFolder();
+        File pluginFolder = getPluginContext().getPlugin().getDataFolder();
         if (!pluginFolder.exists()) {
             pluginFolder.mkdirs();
         }
         return pluginFolder;
     }
 
+    public FileConfiguration getConfig(String fileName) {
+        return loadConfig(fileName);
+    }
+
+    public void saveConfig(String fileName) {
+        super.saveConfig(fileName);
+    }
+
+    public void reloadAddonConfigs() {
+        reloadLoadedConfigs();
+    }
+
+    public void addConfigDefault(String fileName, String path, Object value) {
+        FileConfiguration configuration = loadConfig(fileName);
+        configuration.addDefault(path, value);
+        configuration.options().copyDefaults(true);
+    }
+
     public FileConfiguration getPluginConfig(String fileName) {
-        File file = new File(getPluginDataFolder(), fileName);
-        return YamlConfiguration.loadConfiguration(file);
+        return YamlConfiguration.loadConfiguration(new File(getPluginDataFolder(), fileName));
     }
 
     public void savePluginResource(String resourcePath, boolean replace) {
@@ -159,68 +68,28 @@ public final class MagicAddonContext {
             return;
         }
 
-        try (InputStream in = addonClassLoader.getResourceAsStream(resourcePath)) {
+        try (java.io.InputStream in = getFeatureClassLoader().getResourceAsStream(resourcePath)) {
             if (in == null) {
-                logWarn("[" + descriptor.getName() + "] No encontre el recurso en el jar del addon: " + resourcePath);
+                getAddonLogger().passiveWarning("[" + getManifest().getName() + "] No encontre el recurso compartido: " + resourcePath);
                 return;
             }
 
             File parent = target.getParentFile();
-            if (parent != null && !parent.exists()) {
+            if (parent != null) {
                 parent.mkdirs();
             }
 
-            Files.copy(in, target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException e) {
-            logError("[" + descriptor.getName() + "] No pude guardar el recurso compartido '" + resourcePath + "': " + e.getMessage());
+            java.nio.file.Files.copy(in, target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            getAddonLogger().severe("[" + getManifest().getName() + "] No pude guardar el recurso compartido '" + resourcePath + "': " + e.getMessage());
         }
     }
 
-    // -------------------------------------------------------------------------
-    // Logging
-    // -------------------------------------------------------------------------
-
-    public void logInfo(String message) { logger.info("[Addon | " + descriptor.getName() + "] " + message); }
-    public void logPInfo(String message) { logger.passiveInfo("[Addon | " + descriptor.getName() + "] " + message); }
-    public void logProcess(String message) { logger.process("[Addon | " + descriptor.getName() + "] " + message); }
-    public void logSuccess(String message) { logger.success("[Addon | " + descriptor.getName() + "] " + message); }
-    public void logFailure(String message) { logger.failure("[Addon | " + descriptor.getName() + "] " + message); }
-    public void logWarn(String message) { logger.passiveWarning("[Addon | " + descriptor.getName() + "] " + message); }
-    public void logError(String message) { logger.severe("[Addon | " + descriptor.getName() + "] " + message); }
-
-    // -------------------------------------------------------------------------
-    // Registration
-    // -------------------------------------------------------------------------
-
-    public void registerListener(Listener listener) {
-        if (listener == null) {
-            return;
-        }
-        pluginContext.getPlugin()
-                .getServer()
-                .getPluginManager()
-                .registerEvents(listener, pluginContext.getPlugin());
-        registeredListeners.add(listener);
+    public YALogger getAddonLogger() {
+        return getLogger();
     }
 
-    public void registerCommand(ZFCommand command) {
-        if (command == null) {
-            return;
-        }
-        pluginContext.getCommandManager().registerAddonCommand(command);
-        registeredCommands.add(command);
-    }
-
-    void cleanupRuntimeRegistrations() {
-        for (Listener listener : new ArrayList<>(registeredListeners)) {
-            HandlerList.unregisterAll(listener);
-        }
-        registeredListeners.clear();
-
-        for (ZFCommand command : new ArrayList<>(registeredCommands)) {
-            pluginContext.getCommandManager().unregisterAddonCommand(command);
-        }
-        registeredCommands.clear();
-        loadedConfigs.clear();
+    public JavaPlugin getPluginInstance() {
+        return getPlugin();
     }
 }

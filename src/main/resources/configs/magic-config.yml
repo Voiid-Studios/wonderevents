@@ -1,6 +1,0 @@
-
-Config:
-  # Sends anonymous metrics to bStats
-  # More information:
-  # https://bstats.org/plugin/bukkit/DedsafioVanillaZE/31893
-  bstats_metrics: true

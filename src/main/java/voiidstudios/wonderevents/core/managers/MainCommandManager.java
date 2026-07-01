@@ -24,25 +24,30 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            sendHelp(sender, label);
+            ZFCommand help = context.getCommandManager().findCommand("help");
+            if (help != null) {
+                help.execute(sender, new String[0]);
+            }
             return true;
         }
 
         ZFCommand subcommand = context.getCommandManager().findCommand(args[0]);
         if (subcommand == null) {
-            sender.sendMessage("§cUnknown subcommand. Use /" + label + " help.");
+            context.getMessagesManager().send(sender, "command.unknown");
             return true;
         }
 
         if (!hasPermission(sender, subcommand.getPermission())) {
-            sender.sendMessage("§cYou do not have permission to use that command.");
+            context.getMessagesManager().send(sender, "command.no_permissions");
             return true;
         }
 
         String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
         boolean handled = subcommand.execute(sender, subArgs);
         if (!handled) {
-            sender.sendMessage("§eUsage: /" + label + " " + subcommand.getName());
+            java.util.Map<String, String> placeholders = new java.util.HashMap<>();
+            placeholders.put("%COMMAND%", subcommand.getName());
+            context.getMessagesManager().send(sender, "command.usage", placeholders);
         }
         return true;
     }
@@ -75,16 +80,6 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
         String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
         List<String> completions = subcommand.tabComplete(sender, subArgs);
         return completions == null ? Collections.emptyList() : completions;
-    }
-
-    protected void sendHelp(CommandSender sender, String label) {
-        sender.sendMessage("§d§lWonderEvents §7- §f/" + label + " help");
-        sender.sendMessage("§7Use §d/" + label + " <subcommand> §7to manage the core.");
-        for (ZFCommand subcommand : context.getCommandManager().getSubcommands()) {
-            if (hasPermission(sender, subcommand.getPermission())) {
-                sender.sendMessage(" §8• §d" + subcommand.getName() + " §7- §f" + subcommand.getDescription());
-            }
-        }
     }
 
     private static void addIfMatches(List<String> suggestions, String value, String prefix) {

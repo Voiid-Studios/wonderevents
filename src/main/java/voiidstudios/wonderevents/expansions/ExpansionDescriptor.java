@@ -1,35 +1,68 @@
-
 package voiidstudios.wonderevents.expansions;
 
-public final class ExpansionDescriptor {
-    private final String id;
-    private final String name;
-    private final String version;
-    private final String author;
-    private final String mainClass;
-    private final String dependsExpansion;
-    private final String dependsMinVersion;
+import voiidstudios.wonderevents.core.manifest.WonderManifest;
+import voiidstudios.wonderevents.core.manifest.WonderManifest.DependencyRule;
 
-    public ExpansionDescriptor(String id, String name, String version, String author, String mainClass, String dependsExpansion, String dependsMinVersion) {
-        this.id = id;
-        this.name = name;
-        this.version = version;
-        this.author = author;
-        this.mainClass = mainClass;
-        this.dependsExpansion = dependsExpansion;
-        this.dependsMinVersion = dependsMinVersion;
+import java.util.Map;
+
+/**
+ * Immutable descriptor for an expansion loaded from {@code wonder-manifest.yml}.
+ */
+public final class ExpansionDescriptor {
+
+    private final WonderManifest manifest;
+
+    public ExpansionDescriptor(WonderManifest manifest) {
+        this.manifest = manifest;
     }
 
-    public String getId() { return id; }
-    public String getName() { return name; }
-    public String getVersion() { return version; }
-    public String getAuthor() { return author; }
-    public String getMainClass() { return mainClass; }
-    public String getDependsExpansion() { return dependsExpansion; }
-    public String getDependsMinVersion() { return dependsMinVersion; }
+    public WonderManifest getManifest() {
+        return manifest;
+    }
+
+    public String getId() {
+        return manifest.getId();
+    }
+
+    public String getName() {
+        return manifest.getName();
+    }
+
+    public String getVersion() {
+        return manifest.getVersion();
+    }
+
+    public String getAuthor() {
+        return manifest.getAuthor();
+    }
+
+    public String getDescription() {
+        return manifest.getDescription();
+    }
+
+    public String getBootstrap() {
+        return manifest.getBootstrap();
+    }
+
+    public String getMinCoreVersion() {
+        return manifest.getMinCoreVersion();
+    }
+
+    public Map<String, DependencyRule> getPluginDependencies() {
+        return manifest.getPluginDependencies();
+    }
+
+    public Map<String, DependencyRule> getExpansionDependencies() {
+        return manifest.getExpansionDependencies();
+    }
+
+    public Map<String, DependencyRule> getAddonDependencies() {
+        return manifest.getAddonDependencies();
+    }
 
     @Override
     public String toString() {
-        return name + " (" + version + ")";
+        String author = manifest.getAuthor().isBlank() ? "Unknown" : manifest.getAuthor();
+        return manifest.getName() + " v" + manifest.getVersion() + " by " + author;
     }
 }
