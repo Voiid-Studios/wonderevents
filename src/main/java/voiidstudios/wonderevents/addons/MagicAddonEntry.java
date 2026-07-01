@@ -1,9 +1,8 @@
 package voiidstudios.wonderevents.addons;
 
-import org.bukkit.configuration.file.YamlConfiguration;
-
 import voiidstudios.wonderevents.api.WonderBootstrap;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLClassLoader;
 
@@ -17,17 +16,20 @@ final class MagicAddonEntry {
     private final MagicAddonContext context;
     private final URLClassLoader classLoader;
     private final MagicAddonDescriptor descriptor;
+    private final File sourceFile;
 
     MagicAddonEntry(
             WonderBootstrap addon,
             MagicAddonContext context,
             URLClassLoader classLoader,
-            MagicAddonDescriptor descriptor
+            MagicAddonDescriptor descriptor,
+            File sourceFile
     ) {
         this.addon = addon;
         this.context = context;
         this.classLoader = classLoader;
         this.descriptor = descriptor;
+        this.sourceFile = sourceFile;
     }
 
     WonderBootstrap getAddon() {
@@ -40,6 +42,10 @@ final class MagicAddonEntry {
 
     MagicAddonDescriptor getDescriptor() {
         return descriptor;
+    }
+
+    File getSourceFile() {
+        return sourceFile;
     }
 
     void closeClassLoader() {

@@ -70,7 +70,7 @@ final class MagicAddonLoader {
         );
 
         addon.init(addonContext);
-        return new MagicAddonEntry(addon, addonContext, classLoader, new MagicAddonDescriptor(manifest));
+        return new MagicAddonEntry(addon, addonContext, classLoader, new MagicAddonDescriptor(manifest), jarFile);
     }
 
     private void closeQuietly(URLClassLoader cl) {

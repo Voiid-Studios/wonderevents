@@ -3,6 +3,7 @@ package voiidstudios.wonderevents.expansions;
 import voiidstudios.wonderevents.api.WonderBootstrap;
 import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URLClassLoader;
 
@@ -16,17 +17,20 @@ final class ExpansionEntry {
     private final WonderFeatureContext context;
     private final URLClassLoader classLoader;
     private final ExpansionDescriptor descriptor;
+    private final File sourceFile;
 
     ExpansionEntry(
             WonderBootstrap expansion,
             WonderFeatureContext context,
             URLClassLoader classLoader,
-            ExpansionDescriptor descriptor
+            ExpansionDescriptor descriptor,
+            File sourceFile
     ) {
         this.expansion = expansion;
         this.context = context;
         this.classLoader = classLoader;
         this.descriptor = descriptor;
+        this.sourceFile = sourceFile;
     }
 
     WonderBootstrap getExpansion() {
@@ -41,6 +45,10 @@ final class ExpansionEntry {
         return descriptor;
     }
 
+    File getSourceFile() {
+        return sourceFile;
+    }
+
     void closeClassLoader() {
         try {
             classLoader.close();
@@ -48,3 +56,4 @@ final class ExpansionEntry {
         }
     }
 }
+

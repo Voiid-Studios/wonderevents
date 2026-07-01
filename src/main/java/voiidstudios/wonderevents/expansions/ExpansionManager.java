@@ -122,19 +122,173 @@ public final class ExpansionManager {
     }
 
     public int reloadExpansions() {
-        for (ExpansionEntry entry : new ArrayList<>(loaded.values())) {
+        ensureFolder();
+
+        Map<String, File> currentJars = discoverExpansionJars();
+        List<String> previousOrder = new ArrayList<>(loaded.keySet());
+
+        int disabled = disableMissingExpansions(currentJars);
+        java.util.Set<String> newlyLoaded = loadNewExpansions(currentJars);
+        int reloaded = reloadPresentExpansions(currentJars, previousOrder, newlyLoaded);
+
+        logger.success("[Expansions] Recarga completada. Expansiones activas: " + loaded.size()
+                + " (nuevas: " + newlyLoaded.size() + ", eliminadas: " + disabled + ", recargadas: " + reloaded + ")");
+        return loaded.size();
+    }
+
+    private Map<String, File> discoverExpansionJars() {
+        Map<String, File> jars = new LinkedHashMap<>();
+        File[] files = folder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
+        if (files == null) {
+            return jars;
+        }
+
+        for (File file : files) {
+            WonderManifest manifest = WonderManifestLoader.load(file, logger);
+            if (manifest == null) {
+                continue;
+            }
+
+            String id = manifest.getId().toLowerCase();
+            if (jars.containsKey(id)) {
+                logger.passiveWarning("[Expansions] Ya existe una expansion con el id '" + id + "'. Omito " + file.getName());
+                continue;
+            }
+
+            jars.put(id, file);
+        }
+        return jars;
+    }
+
+    private int disableMissingExpansions(Map<String, File> currentJars) {
+        int disabled = 0;
+        for (String id : new ArrayList<>(loaded.keySet())) {
+            if (currentJars.containsKey(id)) {
+                continue;
+            }
+
+            ExpansionEntry entry = loaded.remove(id);
+            if (entry == null) {
+                continue;
+            }
+
+            String name = entry.getDescriptor().getName();
+            try {
+                entry.getExpansion().onDisable();
+            } catch (Exception e) {
+                logger.passiveWarning("[Expansions] onDisable() fallo en la expansion '" + name + "': " + e.getMessage());
+            }
+
+            try {
+                entry.getContext().unregisterRuntime();
+            } catch (Exception cleanupError) {
+                logger.passiveWarning("[Expansions] La limpieza fallo en la expansion '" + name + "': " + cleanupError.getMessage());
+            }
+
+            entry.closeClassLoader();
+            logger.passiveInfo("[Expansions] Expansion dormida: " + name);
+            disabled++;
+        }
+        return disabled;
+    }
+
+    private java.util.Set<String> loadNewExpansions(Map<String, File> currentJars) {
+        List<File> pending = new ArrayList<>();
+        for (String id : currentJars.keySet()) {
+            if (loaded.containsKey(id)) {
+                continue;
+            }
+            pending.add(currentJars.get(id));
+        }
+
+        java.util.Set<String> loadedIds = new java.util.LinkedHashSet<>();
+        boolean progress;
+        do {
+            progress = false;
+            List<File> nextPending = new ArrayList<>();
+
+            for (File jar : pending) {
+                WonderManifest manifest = WonderManifestLoader.load(jar, logger);
+                if (manifest == null) {
+                    continue;
+                }
+
+                if (manifest.getBootstrap() == null || manifest.getBootstrap().isBlank()) {
+                    logger.passiveWarning("[Expansions] " + jar.getName() + " no define bootstrap.");
+                    continue;
+                }
+
+                LoadDecision decision = canLoad(manifest);
+                if (decision == LoadDecision.RETRY_LATER) {
+                    nextPending.add(jar);
+                    continue;
+                }
+                if (decision == LoadDecision.REJECTED) {
+                    continue;
+                }
+
+                String expansionId = manifest.getId().toLowerCase();
+                if (loaded.containsKey(expansionId)) {
+                    continue;
+                }
+
+                ExpansionEntry entry = loadEntry(jar, manifest);
+                if (entry == null) {
+                    continue;
+                }
+
+                try {
+                    entry.getContext().saveResource("config.yml", false);
+                    entry.getContext().saveResource("data/base.yml", false);
+                    entry.getExpansion().onLoad(entry.getContext());
+                    loaded.put(expansionId, entry);
+                    loadedIds.add(expansionId);
+                    ensureExpansionFolder(entry.getDescriptor());
+                    try {
+                        entry.getExpansion().onEnable();
+                    } catch (Exception enableError) {
+                        logger.passiveWarning("[Expansions] onEnable() fallo en la expansion '" + entry.getDescriptor().getName() + "': " + enableError.getMessage());
+                    }
+                    logger.success("[Expansions] Expansion despierta: " + entry.getDescriptor());
+                    progress = true;
+                } catch (Exception e) {
+                    logger.passiveWarning("[Expansions] onLoad() fallo en la expansion '" + expansionId + "': " + e.getMessage());
+                    entry.closeClassLoader();
+                }
+            }
+
+            pending = nextPending;
+        } while (progress && !pending.isEmpty());
+
+        if (!pending.isEmpty()) {
+            for (File jar : pending) {
+                logger.passiveWarning("[Expansions] Sigo sin poder cargar " + jar.getName() + " porque le faltan dependencias.");
+            }
+        }
+
+        return loadedIds;
+    }
+
+    private int reloadPresentExpansions(Map<String, File> currentJars, List<String> previousOrder, java.util.Set<String> newlyLoaded) {
+        int reloaded = 0;
+        for (String id : previousOrder) {
+            if (!currentJars.containsKey(id) || newlyLoaded.contains(id)) {
+                continue;
+            }
+
+            ExpansionEntry entry = loaded.get(id);
+            if (entry == null) {
+                continue;
+            }
+
             try {
                 entry.getExpansion().onReload();
+                reloaded++;
             } catch (Exception e) {
                 logger.passiveWarning("[Expansions] onReload() fallo en la expansion '" + entry.getDescriptor().getName() + "': " + e.getMessage());
             }
         }
-
-        disableExpansions();
-        int loadedCount = loadExpansions();
-        enableExpansions();
-        logger.success("[Expansions] Recarga completada. Expansiones activas: " + loadedCount);
-        return loadedCount;
+        return reloaded;
     }
 
     public void disableExpansions() {
@@ -225,7 +379,7 @@ public final class ExpansionManager {
         );
 
         expansion.init(featureContext);
-        return new ExpansionEntry(expansion, featureContext, classLoader, new ExpansionDescriptor(manifest));
+        return new ExpansionEntry(expansion, featureContext, classLoader, new ExpansionDescriptor(manifest), jarFile);
     }
 
     private LoadDecision canLoad(WonderManifest manifest) {
