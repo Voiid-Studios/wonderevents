@@ -5,7 +5,7 @@
 
     <groupId>voiidstudios.wonderevents</groupId>
     <artifactId>WonderEvents</artifactId>
-    <version>0.0.2+indevA</version>
+    <version>0.0.2+indevB</version>
     <packaging>jar</packaging>
 
     <properties>

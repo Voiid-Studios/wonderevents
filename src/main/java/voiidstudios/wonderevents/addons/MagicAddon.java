@@ -1,5 +1,7 @@
 package voiidstudios.wonderevents.addons;
 
+import org.bukkit.plugin.java.JavaPlugin;
+
 /**
  * Base class for all D3V-ZE addons.
  *
@@ -83,4 +85,15 @@ public abstract class MagicAddon {
     protected final voiidstudios.wonderevents.core.PluginContext getPluginContext() {
         return addonContext.getPluginContext();
     }
+
+    /** Convenience alias for the core plugin instance. */
+    protected final JavaPlugin getPlugin() {
+        return addonContext.getPlugin();
+    }
+
+    /** Convenience alias for the core plugin instance. */
+    protected final JavaPlugin getCore() {
+        return addonContext.getCore();
+    }
+
 }

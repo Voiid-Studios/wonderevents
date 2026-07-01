@@ -1,6 +1,7 @@
 package voiidstudios.wonderevents;
 
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import voiidstudios.wonderevents.addons.MagicAddonManager;
@@ -8,6 +9,7 @@ import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.log.ConsoleBox;
 import voiidstudios.wonderevents.core.log.JavaLoggerImpl;
 import voiidstudios.wonderevents.core.log.YALogger;
+import voiidstudios.wonderevents.core.managers.MainCommandManager;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
 import voiidstudios.wonderevents.expansions.ExpansionManager;
 
@@ -34,6 +36,7 @@ public final class WEBootstrap extends JavaPlugin {
     private ExpansionManager expansionManager;
     private MagicAddonManager addonManager;
     private MetricsManager metricsManager;
+    private MainCommandManager mainCommandManager;
 
     @Override
     public void onEnable() {
@@ -52,10 +55,14 @@ public final class WEBootstrap extends JavaPlugin {
         metricsManager = new MetricsManager(context);
         expansionManager = new ExpansionManager(context);
         addonManager = new MagicAddonManager(context);
+        mainCommandManager = new MainCommandManager(context);
 
         context.setMetricsManager(metricsManager);
         context.setExpansionManager(expansionManager);
         context.setAddonManager(addonManager);
+
+        context.getCommandManager().loadCoreCommands();
+        registerMainCommand();
 
         if (context.getConfigManager().isBstatsMetricsEnabled()) {
             metricsManager.start();
@@ -74,6 +81,56 @@ public final class WEBootstrap extends JavaPlugin {
         if (addonManager != null) addonManager.disableAddons();
         if (expansionManager != null) expansionManager.disableExpansions();
         if (metricsManager != null) metricsManager.stop();
+    }
+
+    public void reloadWonderEvents() {
+        if (yaLogger == null || context == null) {
+            return;
+        }
+
+        long start = System.nanoTime();
+        yaLogger.process("Reloading WonderEvents...");
+
+        if (addonManager != null) {
+            addonManager.disableAddons();
+        }
+        if (expansionManager != null) {
+            expansionManager.disableExpansions();
+        }
+
+        context.getConfigManager().reload();
+
+        if (metricsManager != null) {
+            metricsManager.stop();
+            if (context.getConfigManager().isBstatsMetricsEnabled()) {
+                metricsManager.start();
+            }
+        }
+
+        int loadedExpansions = 0;
+        int loadedAddons = 0;
+
+        if (expansionManager != null) {
+            loadedExpansions = expansionManager.loadExpansions();
+        }
+        if (addonManager != null) {
+            loadedAddons = addonManager.loadAddons();
+            addonManager.enableAddons();
+        }
+
+        long totalMs = elapsedMs(start);
+        yaLogger.success("§aWonderEvents reloaded §7(" + totalMs + "ms) §8| §fExpansions: §d" + loadedExpansions + " §8| §fAddons: §d" + loadedAddons);
+    }
+
+    private void registerMainCommand() {
+        PluginCommand command = getCommand("wonderevents");
+        if (command == null) {
+            yaLogger.passiveWarning("Could not register /wonderevents because it was missing from plugin.yml");
+            return;
+        }
+
+        command.setExecutor(mainCommandManager);
+        command.setTabCompleter(mainCommandManager);
     }
 
     private long elapsedMs(long startNano) {
@@ -118,9 +175,9 @@ public final class WEBootstrap extends JavaPlugin {
                 break;
             case JUNE:
                 String[] PRIDE_MESSAGES = {
-                    "§cHap§6py P§erid§ae Mo§9nth§d! <3",
-                    "§cJune i§6s here§e. Time §ato bri§bng out §9the co§dlors ;)",
-                    "§cHave §6a won§ederf§aul Pr§bide M§9onth§d! <3"
+                        "§cHap§6py P§erid§ae Mo§9nth§d! <3",
+                        "§cJune i§6s here§e. Time §ato bri§bng out §9the co§dlors ;)",
+                        "§cHave §6a won§ederf§aul Pr§bide M§9onth§d! <3"
                 };
 
                 return PRIDE_MESSAGES[ThreadLocalRandom.current().nextInt(PRIDE_MESSAGES.length)];

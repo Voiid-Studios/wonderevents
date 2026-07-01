@@ -45,6 +45,7 @@ public final class PluginContext {
     }
 
     public WEBootstrap getPlugin() { return plugin; }
+    public WEBootstrap getCore() { return plugin; }
     public ConfigManager getConfigManager() { return configManager; }
     public CommandManager getCommandManager() { return commandManager; }
     public EventManager getEventManager() { return eventManager; }

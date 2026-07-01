@@ -1,3 +1,6 @@
+wonderevents-proyect-*
+create-zip.ps1
+
 target/
 *.class
 

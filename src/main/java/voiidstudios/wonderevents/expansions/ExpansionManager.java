@@ -52,6 +52,15 @@ public final class ExpansionManager {
         loaded.clear();
     }
 
+    public int reloadExpansions() {
+        disableExpansions();
+        return loadExpansions();
+    }
+
+    public int getLoadedCount() {
+        return loaded.size();
+    }
+
     public List<ExpansionDescriptor> getLoadedDescriptors() {
         return new ArrayList<>(loaded.values());
     }

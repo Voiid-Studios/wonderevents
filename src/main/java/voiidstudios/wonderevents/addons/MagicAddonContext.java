@@ -65,6 +65,10 @@ public final class MagicAddonContext {
         return pluginContext.getPlugin();
     }
 
+    public JavaPlugin getCore() {
+        return pluginContext.getPlugin();
+    }
+
     public MagicAddonDescriptor getDescriptor() {
         return descriptor;
     }
