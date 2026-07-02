@@ -5,6 +5,8 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.HandlerList;
 import org.bukkit.event.Listener;
+import org.bukkit.permissions.Permission;
+import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import voiidstudios.wonderevents.WEBootstrap;
@@ -42,6 +44,7 @@ public class WonderFeatureContext {
 
     private final List<Listener> registeredListeners = new ArrayList<>();
     private final List<ZFCommand> registeredCommands = new ArrayList<>();
+    private final List<Permission> registeredPermissions = new ArrayList<>();
     private final Map<String, FileConfiguration> loadedConfigs = new LinkedHashMap<>();
 
     public WonderFeatureContext(
@@ -168,11 +171,28 @@ public class WonderFeatureContext {
         if (command == null) {
             return;
         }
-        pluginContext.getCommandManager().registerAddonCommand(command);
+        pluginContext.getCommandManager().registerAddonCommand(command, manifest);
         registeredCommands.add(command);
     }
 
+    public void registerPermission(Permission permission) {
+        if (permission == null) {
+            return;
+        }
+
+        PluginManager pluginManager = pluginContext.getPlugin().getServer().getPluginManager();
+        if (pluginManager.getPermission(permission.getName()) != null) {
+            logger.passiveWarning("[WonderEvents] Permission already exists and will not be registered twice: " + permission.getName());
+            return;
+        }
+
+        pluginManager.addPermission(permission);
+        registeredPermissions.add(permission);
+    }
+
     public void unregisterRuntime() {
+        PluginManager pluginManager = pluginContext.getPlugin().getServer().getPluginManager();
+
         for (Listener listener : new ArrayList<>(registeredListeners)) {
             HandlerList.unregisterAll(listener);
         }
@@ -182,6 +202,16 @@ public class WonderFeatureContext {
             pluginContext.getCommandManager().unregisterAddonCommand(command);
         }
         registeredCommands.clear();
+
+        for (Permission permission : new ArrayList<>(registeredPermissions)) {
+            try {
+                pluginManager.removePermission(permission);
+            } catch (Exception ignored) {
+                // Best-effort cleanup.
+            }
+        }
+        registeredPermissions.clear();
+
         loadedConfigs.clear();
     }
 

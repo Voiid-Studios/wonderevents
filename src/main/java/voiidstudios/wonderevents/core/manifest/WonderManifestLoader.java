@@ -10,7 +10,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -47,7 +49,7 @@ public final class WonderManifestLoader {
     }
 
     public static WonderManifest parse(YamlConfiguration yaml, String sourceName) {
-        String name = yaml.getString("name", sourceName.replaceFirst("\\.[Jj][Aa][Rr]$", ""));
+        String name = yaml.getString("name", sourceName.replaceFirst(".[Jj][Aa][Rr]$", ""));
         String id = yaml.getString("id", name);
         String version = yaml.getString("version", "0.0.0");
         String author = yaml.getString("author", "Unknown");
@@ -58,6 +60,8 @@ public final class WonderManifestLoader {
         Map<String, WonderManifest.DependencyRule> plugins = parseDependencies(yaml.getConfigurationSection("dependencies.plugins"));
         Map<String, WonderManifest.DependencyRule> expansions = parseDependencies(yaml.getConfigurationSection("dependencies.expansions"));
         Map<String, WonderManifest.DependencyRule> addons = parseDependencies(yaml.getConfigurationSection("dependencies.addons"));
+        Map<String, WonderManifest.CommandDefinition> commands = parseCommands(yaml.getConfigurationSection("commands"));
+        Map<String, WonderManifest.PermissionDefinition> permissions = parsePermissions(yaml.getConfigurationSection("permissions"));
 
         return new WonderManifest(
                 id,
@@ -69,7 +73,9 @@ public final class WonderManifestLoader {
                 minVersion,
                 plugins,
                 expansions,
-                addons
+                addons,
+                commands,
+                permissions
         );
     }
 
@@ -88,6 +94,72 @@ public final class WonderManifestLoader {
                 required = section.getBoolean(key, true);
             }
             result.put(key, new WonderManifest.DependencyRule(required));
+        }
+        return result;
+    }
+
+    private static Map<String, WonderManifest.CommandDefinition> parseCommands(ConfigurationSection section) {
+        Map<String, WonderManifest.CommandDefinition> result = new LinkedHashMap<>();
+        if (section == null) {
+            return result;
+        }
+
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection commandSection = section.getConfigurationSection(key);
+            if (commandSection == null) {
+                continue;
+            }
+
+            String description = commandSection.getString("description", "");
+            String usage = commandSection.getString("usage", "/" + key);
+            String permission = commandSection.getString("permission", "");
+            String permissionMessage = commandSection.getString("permission-message", commandSection.getString("permission_message", ""));
+            List<String> aliases = new ArrayList<>(commandSection.getStringList("aliases"));
+            result.put(key.toLowerCase(java.util.Locale.ROOT), new WonderManifest.CommandDefinition(
+                    key,
+                    description,
+                    usage,
+                    aliases,
+                    permission,
+                    permissionMessage
+            ));
+        }
+        return result;
+    }
+
+    private static Map<String, WonderManifest.PermissionDefinition> parsePermissions(ConfigurationSection section) {
+        Map<String, WonderManifest.PermissionDefinition> result = new LinkedHashMap<>();
+        if (section == null) {
+            return result;
+        }
+
+        for (String key : section.getKeys(false)) {
+            ConfigurationSection permissionSection = section.getConfigurationSection(key);
+            if (permissionSection == null) {
+                continue;
+            }
+
+            String description = permissionSection.getString("description", "");
+            String defaultValue = permissionSection.getString("default", "");
+            Map<String, Boolean> children = parseChildren(permissionSection.getConfigurationSection("children"));
+            result.put(key.toLowerCase(java.util.Locale.ROOT), new WonderManifest.PermissionDefinition(
+                    key,
+                    description,
+                    defaultValue,
+                    children
+            ));
+        }
+        return result;
+    }
+
+    private static Map<String, Boolean> parseChildren(ConfigurationSection section) {
+        Map<String, Boolean> result = new LinkedHashMap<>();
+        if (section == null) {
+            return result;
+        }
+
+        for (String key : section.getKeys(false)) {
+            result.put(key, section.getBoolean(key, true));
         }
         return result;
     }

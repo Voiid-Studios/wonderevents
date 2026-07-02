@@ -1,22 +1,33 @@
 package voiidstudios.wonderevents.core.managers;
 
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandMap;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.SimpleCommandMap;
 
 import voiidstudios.wonderevents.api.ZFCommand;
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.expansions.ExpansionDescriptor;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public class CommandManager {
     private final PluginContext context;
     private final List<ZFCommand> commands = new ArrayList<>();
+    private final Map<ZFCommand, RuntimeRegistration> runtimeCommands = new IdentityHashMap<>();
     private boolean coreCommandsLoaded;
 
     public CommandManager(PluginContext context) {
@@ -140,14 +151,31 @@ public class CommandManager {
         coreCommandsLoaded = true;
     }
 
-    public void registerAddonCommand(ZFCommand command) {
-        if (command != null) {
+    public boolean registerAddonCommand(ZFCommand command, WonderManifest manifest) {
+        if (command == null) {
+            return false;
+        }
+
+        if (isSubcommandSlotOccupied(command)) {
+            context.getPlugin().getYALogger().passiveWarning("[Commands] Ya existe un subcomando con el nombre o alias '" + command.getName() + "'. El comando seguirá disponible como comando nativo si Bukkit lo permite.");
+        } else {
             commands.add(command);
         }
+
+        registerRuntimeCommand(command, manifest);
+        return true;
+    }
+
+    public void registerAddonCommand(ZFCommand command) {
+        registerAddonCommand(command, null);
     }
 
     public void unregisterAddonCommand(ZFCommand command) {
+        if (command == null) {
+            return;
+        }
         commands.remove(command);
+        unregisterRuntimeCommand(command);
     }
 
     public List<ZFCommand> getSubcommands() {
@@ -198,6 +226,130 @@ public class CommandManager {
         }
     }
 
+    private void registerRuntimeCommand(ZFCommand command, WonderManifest manifest) {
+        CommandMap commandMap = resolveCommandMap();
+        if (commandMap == null) {
+            context.getPlugin().getYALogger().passiveWarning("[Commands] No pude obtener el CommandMap de Bukkit para registrar '" + command.getName() + "'.");
+            return;
+        }
+
+        WonderManifest.CommandDefinition definition = manifest == null ? null : manifest.getCommand(command.getName());
+        String name = safe(command.getName(), "unknown");
+        String description = firstNonBlank(definition == null ? null : definition.getDescription(), command.getDescription(), "");
+        String usage = firstNonBlank(definition == null ? null : definition.getUsage(), "/" + name);
+        String permission = firstNonBlank(definition == null ? null : definition.getPermission(), command.getPermission(), "");
+        List<String> aliases = definition != null && !definition.getAliases().isEmpty() ? definition.getAliases() : command.getAliases();
+        aliases = sanitizeAliases(name, aliases);
+
+        RuntimeCommand runtimeCommand = new RuntimeCommand(name, description, usage, aliases, permission, command);
+        if (definition != null && !definition.getPermissionMessage().isBlank()) {
+            runtimeCommand.setPermissionMessage(definition.getPermissionMessage());
+        }
+
+        boolean registered = false;
+        try {
+            registered = commandMap.register(context.getPlugin().getDescription().getName(), runtimeCommand);
+        } catch (Exception e) {
+            context.getPlugin().getYALogger().passiveWarning("[Commands] No pude registrar el comando '" + name + "' en Bukkit: " + e.getMessage());
+        }
+
+        if (!registered) {
+            context.getPlugin().getYALogger().passiveWarning("[Commands] Bukkit rechazo el registro de '" + name + "'. Seguirá disponible solo internamente.");
+            return;
+        }
+
+        runtimeCommands.put(command, new RuntimeRegistration(runtimeCommand, commandMap));
+    }
+
+    private void unregisterRuntimeCommand(ZFCommand command) {
+        RuntimeRegistration registration = runtimeCommands.remove(command);
+        if (registration == null) {
+            return;
+        }
+
+        try {
+            registration.runtimeCommand.unregister(registration.commandMap);
+        } catch (Exception ignored) {
+            // fallback below
+        }
+
+        removeFromKnownCommands(registration.commandMap, registration.runtimeCommand);
+    }
+    private boolean isSubcommandSlotOccupied(ZFCommand command) {
+        if (command == null) {
+            return true;
+        }
+
+        if (findCommand(command.getName()) != null) {
+            return true;
+        }
+
+        for (String alias : command.getAliases()) {
+            if (alias != null && findCommand(alias) != null) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    private void removeFromKnownCommands(CommandMap commandMap, Command command) {
+        try {
+            Field knownCommandsField = findKnownCommandsField(commandMap.getClass());
+            if (knownCommandsField == null) {
+                return;
+            }
+            knownCommandsField.setAccessible(true);
+            Object value = knownCommandsField.get(commandMap);
+            if (!(value instanceof Map<?, ?> rawMap)) {
+                return;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Command> knownCommands = (Map<String, Command>) rawMap;
+            knownCommands.entrySet().removeIf(entry -> entry.getValue() == command);
+        } catch (Exception ignored) {
+            // Best-effort cleanup.
+        }
+    }
+
+    private Field findKnownCommandsField(Class<?> type) {
+        Class<?> current = type;
+        while (current != null) {
+            for (Field field : current.getDeclaredFields()) {
+                if (Map.class.isAssignableFrom(field.getType()) && field.getName().toLowerCase(Locale.ROOT).contains("known")) {
+                    return field;
+                }
+            }
+            current = current.getSuperclass();
+        }
+        return null;
+    }
+
+    private CommandMap resolveCommandMap() {
+        try {
+            Method method = Bukkit.getServer().getClass().getMethod("getCommandMap");
+            Object value = method.invoke(Bukkit.getServer());
+            if (value instanceof CommandMap commandMap) {
+                return commandMap;
+            }
+        } catch (Exception ignored) {
+        }
+
+        try {
+            Field field = Bukkit.getServer().getClass().getDeclaredField("commandMap");
+            field.setAccessible(true);
+            Object value = field.get(Bukkit.getServer());
+            if (value instanceof CommandMap commandMap) {
+                return commandMap;
+            }
+        } catch (Exception ignored) {
+        }
+
+        return null;
+    }
+
     private int getExpansionCount() {
         return context.getExpansionManager() == null ? 0 : context.getExpansionManager().getLoadedDescriptors().size();
     }
@@ -218,8 +370,72 @@ public class CommandManager {
         }
     }
 
+    private static List<String> sanitizeAliases(String name, List<String> aliases) {
+        if (aliases == null || aliases.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> sanitized = new ArrayList<>();
+        Set<String> seen = new java.util.LinkedHashSet<>();
+        String primary = name == null ? "" : name.toLowerCase(Locale.ROOT);
+        for (String alias : aliases) {
+            if (alias == null || alias.isBlank()) {
+                continue;
+            }
+            String normalized = alias.toLowerCase(Locale.ROOT);
+            if (normalized.equals(primary) || seen.contains(normalized)) {
+                continue;
+            }
+            seen.add(normalized);
+            sanitized.add(alias);
+        }
+        return sanitized;
+    }
+
     private static String getPrimaryName(ZFCommand command) {
         return command.getName() == null ? "unknown" : command.getName();
+    }
+
+    private static String safe(String value, String fallback) {
+        return value == null || value.isBlank() ? fallback : value;
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return "";
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return "";
+    }
+
+    private record RuntimeRegistration(RuntimeCommand runtimeCommand, CommandMap commandMap) {
+    }
+
+    private static final class RuntimeCommand extends Command {
+        private final ZFCommand delegate;
+
+        RuntimeCommand(String name, String description, String usageMessage, List<String> aliases, String permission, ZFCommand delegate) {
+            super(name, description == null ? "" : description, usageMessage == null || usageMessage.isBlank() ? "/" + name : usageMessage, aliases == null ? List.of() : List.copyOf(aliases));
+            this.delegate = delegate;
+            if (permission != null && !permission.isBlank()) {
+                setPermission(permission);
+            }
+        }
+
+        @Override
+        public boolean execute(CommandSender sender, String commandLabel, String[] args) {
+            return delegate.execute(sender, args);
+        }
+
+        @Override
+        public List<String> tabComplete(CommandSender sender, String alias, String[] args) {
+            List<String> completions = delegate.tabComplete(sender, args);
+            return completions == null ? Collections.emptyList() : completions;
+        }
     }
 
     private record BaseCommand(

@@ -5,6 +5,7 @@ import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.manifest.WonderManifestLoader;
 import voiidstudios.wonderevents.core.log.YALogger;
+import voiidstudios.wonderevents.core.loader.FeatureClassLoader;
 
 import java.io.File;
 import java.net.URL;
@@ -35,7 +36,7 @@ final class MagicAddonLoader {
     MagicAddonEntry load(File jarFile, WonderManifest manifest) {
         URLClassLoader classLoader;
         try {
-            classLoader = new URLClassLoader(
+            classLoader = new FeatureClassLoader(
                     new URL[]{jarFile.toURI().toURL()},
                     context.getPlugin().getClass().getClassLoader()
             );

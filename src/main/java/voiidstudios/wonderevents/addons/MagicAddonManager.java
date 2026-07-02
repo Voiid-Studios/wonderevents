@@ -12,6 +12,8 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.bukkit.permissions.Permission;
+import org.bukkit.permissions.PermissionDefault;
 
 /**
  * Manages the addon lifecycle for WonderEvents.
@@ -82,7 +84,6 @@ public final class MagicAddonManager {
                 }
 
                 try {
-                    entry.getContext().saveResource("config.yml", false);
                     entry.getAddon().onLoad(entry.getContext());
                     loaded.put(addonId, entry);
                     logger.success("[Addons] Addon despierto: " + entry.getDescriptor());
@@ -235,7 +236,6 @@ public final class MagicAddonManager {
                 }
 
                 try {
-                    entry.getContext().saveResource("config.yml", false);
                     entry.getAddon().onLoad(entry.getContext());
                     loaded.put(addonId, entry);
                     loadedIds.add(addonId);
@@ -360,6 +360,46 @@ public final class MagicAddonManager {
         }
 
         return LoadDecision.READY;
+    }
+
+    private void registerManifestPermissions(MagicAddonContext featureContext, WonderManifest manifest) {
+        if (featureContext == null || manifest == null || manifest.getPermissions().isEmpty()) {
+            return;
+        }
+
+        for (WonderManifest.PermissionDefinition definition : manifest.getPermissions().values()) {
+            Permission permission = new Permission(
+                    definition.getName(),
+                    definition.getDescription(),
+                    parsePermissionDefault(definition.getDefaultValue()),
+                    new LinkedHashMap<>(definition.getChildren())
+            );
+            featureContext.registerPermission(permission);
+        }
+    }
+
+    private PermissionDefault parsePermissionDefault(String value) {
+        if (value == null || value.isBlank()) {
+            return PermissionDefault.OP;
+        }
+
+        switch (value.trim().toLowerCase(java.util.Locale.ROOT)) {
+            case "true":
+            case "yes":
+            case "on":
+                return PermissionDefault.TRUE;
+            case "false":
+            case "no":
+            case "off":
+                return PermissionDefault.FALSE;
+            case "notop":
+            case "not_op":
+            case "not-op":
+                return PermissionDefault.NOT_OP;
+            case "op":
+            default:
+                return PermissionDefault.OP;
+        }
     }
 
     private void ensureAddonsFolder() {
