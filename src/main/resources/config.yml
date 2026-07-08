@@ -1,6 +1,6 @@
 Config:
-  # Sends anonymous metrics to bStats
-  bstats_metrics: true
+  # Sends anonymous metrics to FastStats
+  faststats_metrics: true
 
 Messages:
   # Default language file located in messages/origins/<language>.yml

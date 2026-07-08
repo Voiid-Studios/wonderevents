@@ -1,9 +1,11 @@
 package voiidstudios.wonderevents.core.metrics;
 
+import dev.faststats.bukkit.BukkitContext;
+import dev.faststats.data.Metric;
+
 import voiidstudios.wonderevents.addons.MagicAddonDescriptor;
 import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.expansions.ExpansionDescriptor;
-import voiidstudios.wonderevents.libs.bstats.Metrics;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -11,60 +13,65 @@ import java.util.Map;
 import java.util.function.Function;
 
 public final class MetricsManager {
-    private static final int SERVICE_ID = 32296;
+    private static final String PROJECT_TOKEN = "ead0df10ff128bd5370f44d02521e473";
 
     private final PluginContext context;
-    private Metrics metrics;
+    private BukkitContext bukkitContext;
 
     public MetricsManager(PluginContext context) {
         this.context = context;
     }
 
     public void start() {
-        if (metrics != null) {
+        if (bukkitContext != null) {
             return;
         }
 
-        metrics = new Metrics(context.getPlugin(), SERVICE_ID);
-        metrics.addCustomChart(new Metrics.DrilldownPie("expansions", this::buildExpansionChart));
-        metrics.addCustomChart(new Metrics.DrilldownPie("addons", this::buildAddonChart));
+        bukkitContext = new BukkitContext.Factory(context.getPlugin(), PROJECT_TOKEN)
+                .metrics(factory -> factory
+                        .addMetric(Metric.numberMap("expansions", this::buildExpansionChart))
+                        .addMetric(Metric.numberMap("addons", this::buildAddonChart))
+                        .create())
+                .create();
+
+        bukkitContext.ready();
     }
 
     public void stop() {
-        if (metrics != null) {
-            metrics.shutdown();
-            metrics = null;
+        if (bukkitContext != null) {
+            bukkitContext.shutdown();
+            bukkitContext = null;
         }
     }
 
-    private Map<String, Map<String, Integer>> buildExpansionChart() {
+    private Map<String, Integer> buildExpansionChart() {
         if (context.getExpansionManager() == null) {
             return Map.of();
         }
-        return buildDrilldown(
+        return buildFlattened(
                 context.getExpansionManager().getLoadedDescriptors(),
                 ExpansionDescriptor::getName,
                 ExpansionDescriptor::getVersion
         );
     }
 
-    private Map<String, Map<String, Integer>> buildAddonChart() {
+    private Map<String, Integer> buildAddonChart() {
         if (context.getAddonManager() == null) {
             return Map.of();
         }
-        return buildDrilldown(
+        return buildFlattened(
                 context.getAddonManager().getLoadedDescriptors(),
                 MagicAddonDescriptor::getName,
                 MagicAddonDescriptor::getVersion
         );
     }
 
-    private <T> Map<String, Map<String, Integer>> buildDrilldown(
+    private <T> Map<String, Integer> buildFlattened(
             List<T> descriptors,
             Function<T, String> nameGetter,
             Function<T, String> versionGetter
     ) {
-        Map<String, Map<String, Integer>> data = new LinkedHashMap<>();
+        Map<String, Integer> data = new LinkedHashMap<>();
         if (descriptors == null || descriptors.isEmpty()) {
             return data;
         }
@@ -80,8 +87,8 @@ public final class MetricsManager {
                 continue;
             }
 
-            data.computeIfAbsent(name, ignored -> new LinkedHashMap<>())
-                    .merge(version, 1, Integer::sum);
+            String key = name + "::" + version;
+            data.merge(key, 1, Integer::sum);
         }
 
         return data;

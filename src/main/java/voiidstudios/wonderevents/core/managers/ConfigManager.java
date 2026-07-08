@@ -52,8 +52,8 @@ public final class ConfigManager {
         return config;
     }
 
-    public boolean isBstatsMetricsEnabled() {
-        return config.getBoolean("Config.bstats_metrics", true);
+    public boolean isMetricsEnabled() {
+        return config.getBoolean("Config.faststats_metrics", true);
     }
 
     public String getLanguage() {

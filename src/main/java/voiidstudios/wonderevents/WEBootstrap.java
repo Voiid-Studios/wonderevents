@@ -61,14 +61,14 @@ public final class WEBootstrap extends JavaPlugin {
         context.getCommandManager().loadCoreCommands();
         registerMainCommand();
 
-        if (context.getConfigManager().isBstatsMetricsEnabled()) {
-            metricsManager.start();
-        }
-
         expansionManager.loadExpansions();
         expansionManager.enableExpansions();
         addonManager.loadAddons();
         addonManager.enableAddons();
+
+        if (context.getConfigManager().isMetricsEnabled()) {
+            metricsManager.start();
+        }
 
         long totalMs = elapsedMs(pluginStart);
         yaLogger.success("§aAll set! WonderEvents is set up correctly §7(" + totalMs + "ms)");
@@ -111,7 +111,7 @@ public final class WEBootstrap extends JavaPlugin {
             loadedAddons = addonManager.reloadAddons();
         }
 
-        if (metricsManager != null && context.getConfigManager().isBstatsMetricsEnabled()) {
+        if (metricsManager != null && context.getConfigManager().isMetricsEnabled()) {
             metricsManager.start();
         }
 

@@ -5,7 +5,7 @@
 
     <groupId>voiidstudios.wonderevents</groupId>
     <artifactId>WonderEvents</artifactId>
-    <version>0.0.7+indevA</version>
+    <version>0.0.8+indevB</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -22,6 +22,11 @@
         <repository>
             <id>sonatype</id>
             <url>https://oss.sonatype.org/content/groups/public/</url>
+        </repository>
+        <repository>
+            <id>faststats-releases</id>
+            <name>FastStats</name>
+            <url>https://repo.faststats.dev/releases</url>
         </repository>
     </repositories>
 
@@ -44,6 +49,11 @@
             <version>4.17.0</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>dev.faststats.metrics</groupId>
+            <artifactId>bukkit</artifactId>
+            <version>0.27.2</version>
+        </dependency>
 </dependencies>
 
     <build>
@@ -53,5 +63,28 @@
                 <filtering>true</filtering>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.5.0</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <relocations>
+                                <relocation>
+                                    <pattern>dev.faststats</pattern>
+                                    <shadedPattern>voiidstudios.wonderevents.libs.faststats</shadedPattern>
+                                </relocation>
+                            </relocations>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
     </build>
 </project>
