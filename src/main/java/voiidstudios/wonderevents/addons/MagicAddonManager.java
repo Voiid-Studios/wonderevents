@@ -5,6 +5,7 @@ import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.manifest.WonderManifestLoader;
 import voiidstudios.wonderevents.core.manifest.VersionUtil;
+import voiidstudios.wonderevents.core.manifest.PlatformDependencyChecker;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -337,24 +338,32 @@ public final class MagicAddonManager {
             }
         }
 
-        for (var entry : manifest.getPluginDependencies().entrySet()) {
-            boolean present = context.getPlugin().getServer().getPluginManager().getPlugin(entry.getKey()) != null;
-            if (entry.getValue().isRequired() && !present) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requiere el plugin " + entry.getKey() + " y no esta presente.");
+        for (WonderManifest.DependencyRule rule : manifest.getPluginDependencies()) {
+            boolean satisfied = rule.isSatisfiedBy(name -> context.getPlugin().getServer().getPluginManager().getPlugin(name) != null);
+            if (rule.isRequired() && !satisfied) {
+                logger.passiveWarning("[Addons] " + manifest.getName() + " requiere " + rule.describe() + " (plugins) y la condicion no se cumple.");
                 return LoadDecision.REJECTED;
             }
         }
 
-        for (var entry : manifest.getExpansionDependencies().entrySet()) {
-            boolean present = context.getExpansionManager() != null && context.getExpansionManager().isLoaded(entry.getKey());
-            if (entry.getValue().isRequired() && !present) {
+        for (WonderManifest.DependencyRule rule : manifest.getPlatformDependencies()) {
+            boolean satisfied = rule.isSatisfiedBy(PlatformDependencyChecker::isPresent);
+            if (rule.isRequired() && !satisfied) {
+                logger.passiveWarning("[Addons] " + manifest.getName() + " requiere " + rule.describe() + " (platform) y la condicion no se cumple.");
+                return LoadDecision.REJECTED;
+            }
+        }
+
+        for (WonderManifest.DependencyRule rule : manifest.getExpansionDependencies()) {
+            boolean satisfied = rule.isSatisfiedBy(id -> context.getExpansionManager() != null && context.getExpansionManager().isLoaded(id));
+            if (rule.isRequired() && !satisfied) {
                 return LoadDecision.RETRY_LATER;
             }
         }
 
-        for (var entry : manifest.getAddonDependencies().entrySet()) {
-            boolean present = isLoaded(entry.getKey());
-            if (entry.getValue().isRequired() && !present) {
+        for (WonderManifest.DependencyRule rule : manifest.getAddonDependencies()) {
+            boolean satisfied = rule.isSatisfiedBy(this::isLoaded);
+            if (rule.isRequired() && !satisfied) {
                 return LoadDecision.RETRY_LATER;
             }
         }

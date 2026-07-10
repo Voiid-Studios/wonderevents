@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,9 +58,10 @@ public final class WonderManifestLoader {
         String bootstrap = yaml.getString("bootstrap", yaml.getString("main", ""));
         String minVersion = yaml.getString("requirements.min_version", "0.0.0");
 
-        Map<String, WonderManifest.DependencyRule> plugins = parseDependencies(yaml.getConfigurationSection("dependencies.plugins"));
-        Map<String, WonderManifest.DependencyRule> expansions = parseDependencies(yaml.getConfigurationSection("dependencies.expansions"));
-        Map<String, WonderManifest.DependencyRule> addons = parseDependencies(yaml.getConfigurationSection("dependencies.addons"));
+        List<WonderManifest.DependencyRule> plugins = parseDependencyList(yaml, "dependencies.plugins");
+        List<WonderManifest.DependencyRule> platforms = parseDependencyList(yaml, "dependencies.platforms");
+        List<WonderManifest.DependencyRule> expansions = parseDependencyList(yaml, "dependencies.expansions");
+        List<WonderManifest.DependencyRule> addons = parseDependencyList(yaml, "dependencies.addons");
         Map<String, WonderManifest.CommandDefinition> commands = parseCommands(yaml.getConfigurationSection("commands"));
         Map<String, WonderManifest.PermissionDefinition> permissions = parsePermissions(yaml.getConfigurationSection("permissions"));
 
@@ -72,6 +74,7 @@ public final class WonderManifestLoader {
                 bootstrap,
                 minVersion,
                 plugins,
+                platforms,
                 expansions,
                 addons,
                 commands,
@@ -79,23 +82,61 @@ public final class WonderManifestLoader {
         );
     }
 
-    private static Map<String, WonderManifest.DependencyRule> parseDependencies(ConfigurationSection section) {
-        Map<String, WonderManifest.DependencyRule> result = new LinkedHashMap<>();
-        if (section == null) {
+    /**
+     * Parses a dependency list at the given path, e.g. {@code dependencies.plugins}, into a
+     * list of {@link WonderManifest.DependencyRule}s. Each entry supports the
+     * {@code required}, {@code any}, {@code all}, and {@code none} fields.
+     */
+    private static List<WonderManifest.DependencyRule> parseDependencyList(YamlConfiguration yaml, String path) {
+        List<WonderManifest.DependencyRule> result = new ArrayList<>();
+
+        List<Map<?, ?>> rawList = yaml.getMapList(path);
+        if (rawList == null || rawList.isEmpty()) {
             return result;
         }
 
-        for (String key : section.getKeys(false)) {
-            boolean required = true;
-            if (section.isConfigurationSection(key)) {
-                ConfigurationSection child = section.getConfigurationSection(key);
-                required = child != null && child.getBoolean("required", true);
-            } else {
-                required = section.getBoolean(key, true);
+        for (Map<?, ?> raw : rawList) {
+            boolean required = toBoolean(raw.get("required"), true);
+            List<String> any = toStringList(raw.get("any"));
+            List<String> all = toStringList(raw.get("all"));
+            List<String> none = toStringList(raw.get("none"));
+
+            if (any.isEmpty() && all.isEmpty() && none.isEmpty()) {
+                // Nothing declared for this entry; there is nothing to evaluate, so skip it.
+                continue;
             }
-            result.put(key, new WonderManifest.DependencyRule(required));
+
+            result.add(new WonderManifest.DependencyRule(required, any, all, none));
         }
+
         return result;
+    }
+
+    private static List<String> toStringList(Object value) {
+        if (value == null) {
+            return Collections.emptyList();
+        }
+        if (value instanceof List<?> list) {
+            List<String> result = new ArrayList<>();
+            for (Object entry : list) {
+                if (entry != null) {
+                    result.add(String.valueOf(entry));
+                }
+            }
+            return result;
+        }
+        // Be lenient: allow a single scalar value instead of a one-item list.
+        return new ArrayList<>(List.of(String.valueOf(value)));
+    }
+
+    private static boolean toBoolean(Object value, boolean defaultValue) {
+        if (value instanceof Boolean bool) {
+            return bool;
+        }
+        if (value instanceof String str) {
+            return Boolean.parseBoolean(str);
+        }
+        return defaultValue;
     }
 
     private static Map<String, WonderManifest.CommandDefinition> parseCommands(ConfigurationSection section) {

@@ -24,9 +24,10 @@ public final class WonderManifest {
     private final String bootstrap;
     private final String minCoreVersion;
 
-    private final Map<String, DependencyRule> pluginDependencies;
-    private final Map<String, DependencyRule> expansionDependencies;
-    private final Map<String, DependencyRule> addonDependencies;
+    private final List<DependencyRule> pluginDependencies;
+    private final List<DependencyRule> platformDependencies;
+    private final List<DependencyRule> expansionDependencies;
+    private final List<DependencyRule> addonDependencies;
     private final Map<String, CommandDefinition> commands;
     private final Map<String, PermissionDefinition> permissions;
 
@@ -38,9 +39,10 @@ public final class WonderManifest {
             String description,
             String bootstrap,
             String minCoreVersion,
-            Map<String, DependencyRule> pluginDependencies,
-            Map<String, DependencyRule> expansionDependencies,
-            Map<String, DependencyRule> addonDependencies,
+            List<DependencyRule> pluginDependencies,
+            List<DependencyRule> platformDependencies,
+            List<DependencyRule> expansionDependencies,
+            List<DependencyRule> addonDependencies,
             Map<String, CommandDefinition> commands,
             Map<String, PermissionDefinition> permissions
     ) {
@@ -51,9 +53,10 @@ public final class WonderManifest {
         this.description = emptyIfNull(description);
         this.bootstrap = emptyIfNull(bootstrap);
         this.minCoreVersion = emptyIfNull(minCoreVersion);
-        this.pluginDependencies = immutableCopy(pluginDependencies);
-        this.expansionDependencies = immutableCopy(expansionDependencies);
-        this.addonDependencies = immutableCopy(addonDependencies);
+        this.pluginDependencies = immutableList(pluginDependencies);
+        this.platformDependencies = immutableList(platformDependencies);
+        this.expansionDependencies = immutableList(expansionDependencies);
+        this.addonDependencies = immutableList(addonDependencies);
         this.commands = immutableCopy(commands);
         this.permissions = immutableCopy(permissions);
     }
@@ -86,15 +89,19 @@ public final class WonderManifest {
         return minCoreVersion;
     }
 
-    public Map<String, DependencyRule> getPluginDependencies() {
+    public List<DependencyRule> getPluginDependencies() {
         return pluginDependencies;
     }
 
-    public Map<String, DependencyRule> getExpansionDependencies() {
+    public List<DependencyRule> getPlatformDependencies() {
+        return platformDependencies;
+    }
+
+    public List<DependencyRule> getExpansionDependencies() {
         return expansionDependencies;
     }
 
-    public Map<String, DependencyRule> getAddonDependencies() {
+    public List<DependencyRule> getAddonDependencies() {
         return addonDependencies;
     }
 
@@ -137,13 +144,87 @@ public final class WonderManifest {
 
     public static final class DependencyRule {
         private final boolean required;
+        private final List<String> any;
+        private final List<String> all;
+        private final List<String> none;
 
-        public DependencyRule(boolean required) {
+        public DependencyRule(boolean required, List<String> any, List<String> all, List<String> none) {
             this.required = required;
+            this.any = immutableList(any);
+            this.all = immutableList(all);
+            this.none = immutableList(none);
         }
 
         public boolean isRequired() {
             return required;
+        }
+
+        public List<String> getAny() {
+            return any;
+        }
+
+        public List<String> getAll() {
+            return all;
+        }
+
+        public List<String> getNone() {
+            return none;
+        }
+
+        /**
+         * Evaluates this rule using the given presence checker, which reports whether a
+         * given entry (a plugin name, class name, expansion id, etc.) is currently present.
+         *
+         * <p>Rules with no {@code any}/{@code all}/{@code none} entries are trivially satisfied.
+         */
+        public boolean isSatisfiedBy(java.util.function.Predicate<String> presence) {
+            if (!all.isEmpty()) {
+                for (String entry : all) {
+                    if (!presence.test(entry)) {
+                        return false;
+                    }
+                }
+            }
+
+            if (!any.isEmpty()) {
+                boolean matched = false;
+                for (String entry : any) {
+                    if (presence.test(entry)) {
+                        matched = true;
+                        break;
+                    }
+                }
+                if (!matched) {
+                    return false;
+                }
+            }
+
+            if (!none.isEmpty()) {
+                for (String entry : none) {
+                    if (presence.test(entry)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        /**
+         * Human-readable description of this rule's conditions, for logging purposes.
+         */
+        public String describe() {
+            List<String> parts = new ArrayList<>();
+            if (!all.isEmpty()) {
+                parts.add("all of " + all);
+            }
+            if (!any.isEmpty()) {
+                parts.add("any of " + any);
+            }
+            if (!none.isEmpty()) {
+                parts.add("none of " + none);
+            }
+            return String.join(" and ", parts);
         }
     }
 
@@ -219,7 +300,7 @@ public final class WonderManifest {
         }
     }
 
-    private static List<String> immutableList(List<String> input) {
+    private static <T> List<T> immutableList(List<T> input) {
         if (input == null || input.isEmpty()) {
             return Collections.emptyList();
         }

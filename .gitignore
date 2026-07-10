@@ -2,6 +2,7 @@ wonderevents-proyect-*
 create-zip.ps1
 
 target/
+dependency-reduced-pom.xml
 *.class
 
 .idea/

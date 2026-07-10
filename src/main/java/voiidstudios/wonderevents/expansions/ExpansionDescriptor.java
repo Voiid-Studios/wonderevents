@@ -3,7 +3,7 @@ package voiidstudios.wonderevents.expansions;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.manifest.WonderManifest.DependencyRule;
 
-import java.util.Map;
+import java.util.List;
 
 /**
  * Immutable descriptor for an expansion loaded from {@code wonder-manifest.yml}.
@@ -48,15 +48,19 @@ public final class ExpansionDescriptor {
         return manifest.getMinCoreVersion();
     }
 
-    public Map<String, DependencyRule> getPluginDependencies() {
+    public List<DependencyRule> getPluginDependencies() {
         return manifest.getPluginDependencies();
     }
 
-    public Map<String, DependencyRule> getExpansionDependencies() {
+    public List<DependencyRule> getPlatformDependencies() {
+        return manifest.getPlatformDependencies();
+    }
+
+    public List<DependencyRule> getExpansionDependencies() {
         return manifest.getExpansionDependencies();
     }
 
-    public Map<String, DependencyRule> getAddonDependencies() {
+    public List<DependencyRule> getAddonDependencies() {
         return manifest.getAddonDependencies();
     }
 
