@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class WEBootstrap extends JavaPlugin {
@@ -25,12 +26,6 @@ public final class WEBootstrap extends JavaPlugin {
 
     private static final String WE_LOADED_PROPERTY = "wonderevents.jvm.loaded";
     private static final long UPDATE_CHECK_INTERVAL = 8L * 60L * 60L * 20L; // 8 hours
-
-    private final String serverName = Bukkit.getServer().getName();
-    private final String bukkitVersion = Bukkit.getBukkitVersion();
-    private final String cleanVersion = bukkitVersion.split("-")[0];
-    private final String serverId = Bukkit.getVersion();
-    private final String cleanId = serverId.split("-", 2)[1].split(" ")[0];
 
     private YALogger yaLogger;
     private PluginContext context;
@@ -45,6 +40,8 @@ public final class WEBootstrap extends JavaPlugin {
 
         yaLogger = new YALogger(new JavaLoggerImpl(Bukkit.getServer().getLogger()), true);
         yaLogger.process("Warming up...");
+
+        sendConsoleBanner();
 
         sendConsoleInformationMessage();
 
@@ -79,6 +76,7 @@ public final class WEBootstrap extends JavaPlugin {
         if (addonManager != null) addonManager.disableAddons();
         if (expansionManager != null) expansionManager.disableExpansions();
         if (metricsManager != null) metricsManager.stop();
+        if (context != null) context.getAdventureManager().stop();
     }
 
     public void reloadWonderEvents() {
@@ -149,16 +147,80 @@ public final class WEBootstrap extends JavaPlugin {
         return (System.nanoTime() - startNano) / 1_000_000L;
     }
 
+    private void sendConsoleBanner(){
+        yaLogger.info("");
+        yaLogger.info("          ::::::");
+        yaLogger.info("      ::::::::");
+        yaLogger.info("    ::::::::        ::");
+        yaLogger.info("  ::::::::      ::  ::  ::");
+        yaLogger.info("  ::::::::        ::::::");
+        yaLogger.info("::::::::::    ::::::::::::::");
+        yaLogger.info("::::::::::        ::::::");
+        yaLogger.info("::::::::::      ::  ::  ::    ::");
+        yaLogger.info("::::::::::          ::        ::");
+        yaLogger.info("::::::::::::                ::::");
+        yaLogger.info("::::::::::::::            ::::::");
+        yaLogger.info("::::::::::::::::::::::::::::::::");
+        yaLogger.info("  ::::::::::::::::::::::::::::");
+        yaLogger.info("    ::::::::::::::::::::::::");
+        yaLogger.info("      ::::::::::::::::::::");
+        yaLogger.info("          ::::::::::::");
+        yaLogger.info("");
+    }
+
     public void sendConsoleInformationMessage() {
         List<String> box = ConsoleBox.builder()
                 .borderColor("§d")
                 .title("§bWonderEvents")
                 .line("§fVersion: §b" + version)
-                .line("§fRunning on: §b" + serverName + " §7(ID: " + cleanId + ", MC: " + cleanVersion + ")")
+                .line("§fRunning on: " + platformInfo())
                 .footer(dateText())
                 .build();
 
         box.forEach(yaLogger::info);
+    }
+
+    public static String platformInfo(){
+        try{
+            Class.forName("io.papermc.paper.ServerBuildInfo");
+            return modernInfo();
+        }catch(ClassNotFoundException ignored){
+            return legacyInfo();
+        }
+    }
+    
+    private static String modernInfo(){
+        io.papermc.paper.ServerBuildInfo info = io.papermc.paper.ServerBuildInfo.buildInfo();
+        
+        String name = info.brandName();
+        String mcVersion = info.minecraftVersionName();
+
+        OptionalInt build = info.buildNumber();
+        if(build.isEmpty())
+            return String.format("§b%s §7(MC: %s)", name, mcVersion);
+        
+        return String.format("§b%s §7(MC: %s, Build: %s)", name, mcVersion, build.getAsInt());
+    }
+    
+    private static String legacyInfo(){
+        String bukkitVersion = Bukkit.getBukkitVersion(); // "1.8.8-R0.1-SNAPSHOT"
+        String mcVersion = bukkitVersion.split("-")[0];
+        
+        String raw = Bukkit.getVersion(); // "git-Paper-1618 (MC: 1.16.5)"
+        String name = extractBrand(raw);
+        
+        return String.format("§b%s §7(MC: %s)", name, mcVersion);
+    }
+    
+    private static String extractBrand(String rawVersion){
+        if(rawVersion != null && rawVersion.startsWith("git-")){
+            String stripped = rawVersion.substring(4);
+            int dash = stripped.indexOf('-');
+            if(dash > 0)
+                return stripped.substring(0, dash);
+        }
+        
+        return Bukkit.getName();
     }
 
     private String dateText() {
@@ -207,16 +269,15 @@ public final class WEBootstrap extends JavaPlugin {
                 break;
         }
 
-        int hour = LocalTime.now().getHour();
-        if (hour >= 6 && hour < 12) {
-            return "§fGood morning! Hope your server has a great day :)";
-        } else if (hour >= 12 && hour < 19) {
-            return "§fGood afternoon! Keep up the good work :D";
-        } else if (hour >= 19 && hour < 22) {
-            return "§fGood evening! Wrapping up for the day? :b";
-        } else {
-            return "§fLate night gaming session? Don't forget to sleep! :p";
-        }
+        String[] VS_MESSAGES = {
+                "§fMade with <3 from Voiid Studios",
+                "§fThe Voiid Studios Team says hello ;)",
+                "§fVoiid Studios on top! <3",
+                "§fVoiid Studios was here :D",
+                "§fKeep playing & wondering with Voiid Studios <3",
+        };
+
+        return VS_MESSAGES[ThreadLocalRandom.current().nextInt(VS_MESSAGES.length)];
     }
 
     public YALogger getYALogger() {

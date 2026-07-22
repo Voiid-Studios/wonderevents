@@ -2,6 +2,7 @@ package voiidstudios.wonderevents.core;
 
 import voiidstudios.wonderevents.WEBootstrap;
 import voiidstudios.wonderevents.addons.MagicAddonManager;
+import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.managers.CommandManager;
 import voiidstudios.wonderevents.core.managers.ConfigManager;
 import voiidstudios.wonderevents.core.managers.EventManager;
@@ -24,6 +25,7 @@ public final class PluginContext {
     private final ModuleManager moduleManager;
     private final PlatformAdapter platformAdapter;
     private final SchedulerAdapter schedulerAdapter;
+    private final AdventureManager adventureManager;
 
     private MetricsManager metricsManager;
     private MagicAddonManager addonManager;
@@ -39,6 +41,8 @@ public final class PluginContext {
         this.moduleManager = new ModuleManager(this);
         this.platformAdapter = createPlatformAdapter();
         this.schedulerAdapter = new BukkitSchedulerAdapter(plugin);
+        this.adventureManager = new AdventureManager(this);
+        this.adventureManager.start();
     }
 
     private PlatformAdapter createPlatformAdapter() {
@@ -57,6 +61,7 @@ public final class PluginContext {
     public ModuleManager getModuleManager() { return moduleManager; }
     public PlatformAdapter getPlatform() { return platformAdapter; }
     public SchedulerAdapter getScheduler() { return schedulerAdapter; }
+    public AdventureManager getAdventureManager() { return adventureManager; }
 
     public MetricsManager getMetricsManager() { return metricsManager; }
     public void setMetricsManager(MetricsManager metricsManager) { this.metricsManager = metricsManager; }

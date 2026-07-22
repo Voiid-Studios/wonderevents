@@ -6,6 +6,7 @@ import voiidstudios.wonderevents.WEBootstrap;
 import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
 import voiidstudios.wonderevents.core.log.YALogger;
+import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 
 /**
@@ -74,5 +75,13 @@ public abstract class WonderBootstrap {
 
     public final YALogger getLogger() {
         return featureContext == null ? null : featureContext.getLogger();
+    }
+
+    /**
+     * Simple entry point for Adventure: {@code getAdventure().player(p).sendMessage(getAdventure().mini("<red>Hola"))}.
+     * Works the same way on Paper and Spigot, from 1.16 up.
+     */
+    public final AdventureManager getAdventure() {
+        return featureContext == null ? null : featureContext.getAdventure();
     }
 }

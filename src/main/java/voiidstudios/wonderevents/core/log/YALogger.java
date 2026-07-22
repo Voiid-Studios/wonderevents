@@ -3,11 +3,23 @@ package voiidstudios.wonderevents.core.log;
 public class YALogger {
     private final EpicPlatformLogger logger;
     private final boolean color;
+    private final String namePrefix;
     private boolean debug;
 
     public YALogger(EpicPlatformLogger logger, boolean color) {
+        this(logger, color, "");
+    }
+
+    private YALogger(EpicPlatformLogger logger, boolean color, String namePrefix) {
         this.logger = logger;
-        this.color  = color;
+        this.color = color;
+        this.namePrefix = namePrefix;
+    }
+
+    public YALogger withName(String name) {
+        YALogger named = new YALogger(logger, color, "[" + name + "] ");
+        named.debug = this.debug;
+        return named;
     }
 
     public void setDebug(boolean debug) {
@@ -129,6 +141,10 @@ public class YALogger {
     }
 
     private String formatMessage(EpicLogLevel level, String message) {
+        if (!namePrefix.isEmpty()) {
+            message = namePrefix + message;
+        }
+
         if (color) {
             String prefix = getPrefix(level);
             String levelColor;

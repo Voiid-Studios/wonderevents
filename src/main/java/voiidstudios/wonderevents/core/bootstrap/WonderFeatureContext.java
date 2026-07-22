@@ -13,6 +13,7 @@ import voiidstudios.wonderevents.WEBootstrap;
 import voiidstudios.wonderevents.api.WonderBootstrap;
 import voiidstudios.wonderevents.api.ZFCommand;
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.log.YALogger;
 
@@ -57,7 +58,7 @@ public class WonderFeatureContext {
         this.manifest = manifest;
         this.featureClassLoader = featureClassLoader;
         this.dataFolder = dataFolder;
-        this.logger = pluginContext.getPlugin().getYALogger();
+        this.logger = pluginContext.getPlugin().getYALogger().withName(manifest.getName());
     }
 
     public PluginContext getPluginContext() {
@@ -217,5 +218,9 @@ public class WonderFeatureContext {
 
     public CommandSender getConsoleSender() {
         return pluginContext.getPlugin().getServer().getConsoleSender();
+    }
+
+    public AdventureManager getAdventure() {
+        return pluginContext.getAdventureManager();
     }
 }
