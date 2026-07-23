@@ -1,31 +1,21 @@
 package voiidstudios.wonderevents.expansions;
 
-import voiidstudios.wonderevents.api.WonderBootstrap;
+import voiidstudios.wonderevents.api.WEABootstrap;
 import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.URLClassLoader;
 
-/**
- * Internal runtime record that keeps a loaded expansion instance, its context,
- * and the class-loader together.
- */
-final class ExpansionEntry {
+final class WonderExpansionEntry {
 
-    private final WonderBootstrap expansion;
+    private final WEABootstrap expansion;
     private final WonderFeatureContext context;
     private final URLClassLoader classLoader;
-    private final ExpansionDescriptor descriptor;
+    private final WonderExpansionDescriptor descriptor;
     private final File sourceFile;
 
-    ExpansionEntry(
-            WonderBootstrap expansion,
-            WonderFeatureContext context,
-            URLClassLoader classLoader,
-            ExpansionDescriptor descriptor,
-            File sourceFile
-    ) {
+    WonderExpansionEntry(WEABootstrap expansion, WonderFeatureContext context, URLClassLoader classLoader, WonderExpansionDescriptor descriptor, File sourceFile) {
         this.expansion = expansion;
         this.context = context;
         this.classLoader = classLoader;
@@ -33,7 +23,7 @@ final class ExpansionEntry {
         this.sourceFile = sourceFile;
     }
 
-    WonderBootstrap getExpansion() {
+    WEABootstrap getExpansion() {
         return expansion;
     }
 
@@ -41,7 +31,7 @@ final class ExpansionEntry {
         return context;
     }
 
-    ExpansionDescriptor getDescriptor() {
+    WonderExpansionDescriptor getDescriptor() {
         return descriptor;
     }
 
@@ -52,8 +42,7 @@ final class ExpansionEntry {
     void closeClassLoader() {
         try {
             classLoader.close();
-        } catch (IOException ignored) {
-        }
+        } catch (IOException ignored) {}
     }
 }
 

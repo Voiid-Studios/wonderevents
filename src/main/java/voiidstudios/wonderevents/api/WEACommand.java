@@ -5,11 +5,8 @@ import org.bukkit.command.CommandSender;
 import java.util.Collections;
 import java.util.List;
 
-public interface ZFCommand {
-
+public interface WEACommand {
     String getName();
-
-    String getDescription();
 
     String getPermission();
 

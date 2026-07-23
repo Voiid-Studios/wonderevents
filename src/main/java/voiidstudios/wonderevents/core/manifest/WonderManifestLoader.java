@@ -18,32 +18,33 @@ import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-/**
- * Reads {@link WonderManifest} objects from jars.
- */
 public final class WonderManifestLoader {
-
-    private WonderManifestLoader() {
-    }
+    private WonderManifestLoader() {}
 
     public static WonderManifest load(File jarFile, YALogger logger) {
         try (JarFile jar = new JarFile(jarFile)) {
             JarEntry entry = jar.getJarEntry(WonderManifest.FILE_NAME);
             if (entry == null) {
                 if (logger != null) {
-                    logger.passiveWarning("[WonderEvents] " + jarFile.getName() + " does not contain " + WonderManifest.FILE_NAME);
+                    logger.passiveWarning(jarFile.getName() + " does not contain " + WonderManifest.FILE_NAME);
                 }
                 return null;
             }
 
-            try (InputStream in = jar.getInputStream(entry);
-                 InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
+            try (InputStream in = jar.getInputStream(entry); InputStreamReader reader = new InputStreamReader(in, StandardCharsets.UTF_8)) {
                 YamlConfiguration yaml = YamlConfiguration.loadConfiguration(reader);
                 return parse(yaml, jarFile.getName());
             }
         } catch (IOException e) {
             if (logger != null) {
-                logger.passiveWarning("[WonderEvents] Could not read " + jarFile.getName() + ": " + e.getMessage());
+                logger.passiveWarning("Could not read " + jarFile.getName() + ": " + e.getMessage());
+            }
+            return null;
+        } catch (Throwable e) {
+            // A malformed wonder-manifest.yml (bad types, invalid YAML structure, etc.)
+            // must never bring down the whole addon/expansion loading loop.
+            if (logger != null) {
+                logger.passiveWarning("Could not parse " + WonderManifest.FILE_NAME + " in " + jarFile.getName() + ": " + e.getMessage());
             }
             return null;
         }
@@ -55,8 +56,12 @@ public final class WonderManifestLoader {
         String version = yaml.getString("version", "0.0.0");
         String author = yaml.getString("author", "Unknown");
         String description = yaml.getString("description", "");
-        String bootstrap = yaml.getString("bootstrap", yaml.getString("main", ""));
-        String minVersion = yaml.getString("requirements.min_version", "0.0.0");
+        String bootstrap = yaml.getString("bootstrap", "");
+
+        String minVersion = yaml.getString("requirements.wonder_min_version", "");
+        String maxVersion = yaml.getString("requirements.wonder_max_version", "");
+        String mcMinVersion = yaml.getString("requirements.mc_min_version", "");
+        String mcMaxVersion = yaml.getString("requirements.mc_max_version", "");
 
         List<WonderManifest.DependencyRule> plugins = parseDependencyList(yaml, "dependencies.plugins");
         List<WonderManifest.DependencyRule> platforms = parseDependencyList(yaml, "dependencies.platforms");
@@ -73,6 +78,9 @@ public final class WonderManifestLoader {
                 description,
                 bootstrap,
                 minVersion,
+                maxVersion,
+                mcMinVersion,
+                mcMaxVersion,
                 plugins,
                 platforms,
                 expansions,
@@ -82,11 +90,6 @@ public final class WonderManifestLoader {
         );
     }
 
-    /**
-     * Parses a dependency list at the given path, e.g. {@code dependencies.plugins}, into a
-     * list of {@link WonderManifest.DependencyRule}s. Each entry supports the
-     * {@code required}, {@code any}, {@code all}, and {@code none} fields.
-     */
     private static List<WonderManifest.DependencyRule> parseDependencyList(YamlConfiguration yaml, String path) {
         List<WonderManifest.DependencyRule> result = new ArrayList<>();
 
@@ -102,7 +105,6 @@ public final class WonderManifestLoader {
             List<String> none = toStringList(raw.get("none"));
 
             if (any.isEmpty() && all.isEmpty() && none.isEmpty()) {
-                // Nothing declared for this entry; there is nothing to evaluate, so skip it.
                 continue;
             }
 
@@ -125,7 +127,7 @@ public final class WonderManifestLoader {
             }
             return result;
         }
-        // Be lenient: allow a single scalar value instead of a one-item list.
+
         return new ArrayList<>(List.of(String.valueOf(value)));
     }
 

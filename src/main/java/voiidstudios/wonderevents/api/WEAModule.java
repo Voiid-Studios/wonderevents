@@ -2,8 +2,7 @@ package voiidstudios.wonderevents.api;
 
 import voiidstudios.wonderevents.core.PluginContext;
 
-public interface ZFModule {
-
+public interface WEAModule {
     String getName();
 
     boolean isEnabledByDefault();

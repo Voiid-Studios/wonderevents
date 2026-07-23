@@ -8,7 +8,7 @@ import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.log.YALogger;
-import voiidstudios.wonderevents.expansions.ExpansionManager;
+import voiidstudios.wonderevents.expansions.WonderExpansionManager;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,20 +16,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 
-/**
- * Addon-friendly extension of {@link WonderFeatureContext}.
- *
- * <p>It keeps the generic runtime helpers from the base context and adds a few
- * addon-specific aliases so older addon code keeps reading naturally.
- */
-public class MagicAddonContext extends WonderFeatureContext {
-
-    public MagicAddonContext(
-            PluginContext pluginContext,
-            WonderManifest manifest,
-            ClassLoader addonClassLoader,
-            File addonDataFolder
-    ) {
+public class WonderAddonContext extends WonderFeatureContext {
+    public WonderAddonContext(PluginContext pluginContext, WonderManifest manifest, ClassLoader addonClassLoader, File addonDataFolder) {
         super(pluginContext, manifest, addonClassLoader, addonDataFolder);
     }
 
@@ -45,42 +33,26 @@ public class MagicAddonContext extends WonderFeatureContext {
         return pluginFolder;
     }
 
-    /**
-     * Returns the data folder belonging to the given expansion (e.g. {@code expansions/Extremo3Vanilla/}),
-     * so an addon can store its files there instead of creating its own {@code addons/<id>/} folder.
-     *
-     * <p>This is useful for addons that only make sense alongside a specific expansion and want to
-     * share its file layout (e.g. a resource-pack add-on writing into the expansion it extends).
-     * The folder is created if it does not exist yet, regardless of whether the expansion is
-     * currently loaded.
-     */
     public File getExpansionDataFolder(String expansionId) {
-        ExpansionManager expansionManager = getPluginContext().getExpansionManager();
+        WonderExpansionManager expansionManager = getPluginContext().getExpansionManager();
         if (expansionManager == null) {
             throw new IllegalStateException("ExpansionManager is not available");
         }
 
         if (!expansionManager.isLoaded(expansionId)) {
-            getAddonLogger().passiveWarning("[" + getManifest().getName() + "] Escribiendo en la carpeta de la expansion '"
-                    + expansionId + "', pero esa expansion no esta cargada actualmente.");
+            getAddonLogger().passiveWarning("[" + getManifest().getName() + "] Writing to expansion folder '" + expansionId + "', but that expansion is not currently loaded.");
         }
 
         return expansionManager.getExpansionDataFolder(expansionId);
     }
 
-    /**
-     * Loads (or creates an empty) YAML file from the given expansion's data folder.
-     */
     public FileConfiguration getExpansionConfig(String expansionId, String fileName) {
         return YamlConfiguration.loadConfiguration(new File(getExpansionDataFolder(expansionId), fileName));
     }
 
-    /**
-     * Saves a {@link FileConfiguration} into the given expansion's data folder.
-     */
     public void saveExpansionConfig(String expansionId, String fileName, FileConfiguration configuration) {
         if (configuration == null) {
-            getAddonLogger().passiveWarning("[" + getManifest().getName() + "] saveExpansionConfig llamado con una configuracion nula para '" + fileName + "'");
+            getAddonLogger().passiveWarning("[" + getManifest().getName() + "] saveExpansionConfig called with a null configuration for '" + fileName + "'");
             return;
         }
 
@@ -93,14 +65,10 @@ public class MagicAddonContext extends WonderFeatureContext {
         try {
             configuration.save(file);
         } catch (IOException e) {
-            getAddonLogger().severe("[" + getManifest().getName() + "] No pude guardar '" + fileName + "' en la expansion '" + expansionId + "': " + e.getMessage());
+            getAddonLogger().severe("[" + getManifest().getName() + "] Could not save '" + fileName + "' in expansion '" + expansionId + "': " + e.getMessage());
         }
     }
 
-    /**
-     * Copies a resource bundled in this addon's jar into the given expansion's data folder,
-     * preserving any subfolder structure encoded in {@code resourcePath}.
-     */
     public void saveExpansionResource(String expansionId, String resourcePath, boolean replace) {
         File target = new File(getExpansionDataFolder(expansionId), resourcePath);
         if (target.exists() && !replace) {
@@ -109,7 +77,7 @@ public class MagicAddonContext extends WonderFeatureContext {
 
         try (InputStream in = getFeatureClassLoader().getResourceAsStream(resourcePath)) {
             if (in == null) {
-                getAddonLogger().passiveWarning("[" + getManifest().getName() + "] No encontre el recurso '" + resourcePath + "' dentro del addon.");
+                getAddonLogger().passiveWarning("[" + getManifest().getName() + "] Could not find resource '" + resourcePath + "' inside the addon.");
                 return;
             }
 
@@ -120,7 +88,7 @@ public class MagicAddonContext extends WonderFeatureContext {
 
             Files.copy(in, target.toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            getAddonLogger().severe("[" + getManifest().getName() + "] No pude copiar el recurso '" + resourcePath + "' hacia la expansion '" + expansionId + "': " + e.getMessage());
+            getAddonLogger().severe("[" + getManifest().getName() + "] Could not copy resource '" + resourcePath + "' to expansion '" + expansionId + "': " + e.getMessage());
         }
     }
 
@@ -154,7 +122,7 @@ public class MagicAddonContext extends WonderFeatureContext {
 
         try (java.io.InputStream in = getFeatureClassLoader().getResourceAsStream(resourcePath)) {
             if (in == null) {
-                getAddonLogger().passiveWarning("[" + getManifest().getName() + "] No encontre el recurso compartido: " + resourcePath);
+                getAddonLogger().passiveWarning("[" + getManifest().getName() + "] Could not find shared resource: " + resourcePath);
                 return;
             }
 
@@ -165,7 +133,7 @@ public class MagicAddonContext extends WonderFeatureContext {
 
             java.nio.file.Files.copy(in, target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
-            getAddonLogger().severe("[" + getManifest().getName() + "] No pude guardar el recurso compartido '" + resourcePath + "': " + e.getMessage());
+            getAddonLogger().severe("[" + getManifest().getName() + "] Could not save shared resource '" + resourcePath + "': " + e.getMessage());
         }
     }
 

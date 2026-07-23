@@ -1,7 +1,7 @@
 package voiidstudios.wonderevents.core;
 
 import voiidstudios.wonderevents.WEBootstrap;
-import voiidstudios.wonderevents.addons.MagicAddonManager;
+import voiidstudios.wonderevents.addons.WonderAddonManager;
 import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.managers.CommandManager;
 import voiidstudios.wonderevents.core.managers.ConfigManager;
@@ -14,7 +14,7 @@ import voiidstudios.wonderevents.core.platform.PlatformAdapter;
 import voiidstudios.wonderevents.core.platform.SpigotPlatformAdapter;
 import voiidstudios.wonderevents.core.scheduler.BukkitSchedulerAdapter;
 import voiidstudios.wonderevents.core.scheduler.SchedulerAdapter;
-import voiidstudios.wonderevents.expansions.ExpansionManager;
+import voiidstudios.wonderevents.expansions.WonderExpansionManager;
 
 public final class PluginContext {
     private final WEBootstrap plugin;
@@ -28,8 +28,8 @@ public final class PluginContext {
     private final AdventureManager adventureManager;
 
     private MetricsManager metricsManager;
-    private MagicAddonManager addonManager;
-    private ExpansionManager expansionManager;
+    private WonderAddonManager addonManager;
+    private WonderExpansionManager expansionManager;
 
     public PluginContext(WEBootstrap plugin) {
         this.plugin = plugin;
@@ -66,9 +66,9 @@ public final class PluginContext {
     public MetricsManager getMetricsManager() { return metricsManager; }
     public void setMetricsManager(MetricsManager metricsManager) { this.metricsManager = metricsManager; }
 
-    public MagicAddonManager getAddonManager() { return addonManager; }
-    public void setAddonManager(MagicAddonManager addonManager) { this.addonManager = addonManager; }
+    public WonderAddonManager getAddonManager() { return addonManager; }
+    public void setAddonManager(WonderAddonManager addonManager) { this.addonManager = addonManager; }
 
-    public ExpansionManager getExpansionManager() { return expansionManager; }
-    public void setExpansionManager(ExpansionManager expansionManager) { this.expansionManager = expansionManager; }
+    public WonderExpansionManager getExpansionManager() { return expansionManager; }
+    public void setExpansionManager(WonderExpansionManager expansionManager) { this.expansionManager = expansionManager; }
 }

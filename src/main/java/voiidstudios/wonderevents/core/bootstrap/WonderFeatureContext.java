@@ -10,8 +10,7 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import voiidstudios.wonderevents.WEBootstrap;
-import voiidstudios.wonderevents.api.WonderBootstrap;
-import voiidstudios.wonderevents.api.ZFCommand;
+import voiidstudios.wonderevents.api.WEACommand;
 import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
@@ -20,23 +19,13 @@ import voiidstudios.wonderevents.core.log.YALogger;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Shared runtime context handed to feature bootstraps.
- *
- * <p>Both expansions and addons use this same base class. Addons can extend it
- * with convenience helpers, but the core registration and resource-copying
- * logic lives here so it does not get duplicated everywhere.
- */
 public class WonderFeatureContext {
-
     private final PluginContext pluginContext;
     private final WonderManifest manifest;
     private final ClassLoader featureClassLoader;
@@ -44,16 +33,11 @@ public class WonderFeatureContext {
     private final YALogger logger;
 
     private final List<Listener> registeredListeners = new ArrayList<>();
-    private final List<ZFCommand> registeredCommands = new ArrayList<>();
+    private final List<WEACommand> registeredCommands = new ArrayList<>();
     private final List<Permission> registeredPermissions = new ArrayList<>();
     private final Map<String, FileConfiguration> loadedConfigs = new LinkedHashMap<>();
 
-    public WonderFeatureContext(
-            PluginContext pluginContext,
-            WonderManifest manifest,
-            ClassLoader featureClassLoader,
-            File dataFolder
-    ) {
+    public WonderFeatureContext(PluginContext pluginContext, WonderManifest manifest, ClassLoader featureClassLoader, File dataFolder) {
         this.pluginContext = pluginContext;
         this.manifest = manifest;
         this.featureClassLoader = featureClassLoader;
@@ -96,6 +80,14 @@ public class WonderFeatureContext {
         return logger;
     }
 
+    public CommandSender getConsoleSender() {
+        return pluginContext.getPlugin().getServer().getConsoleSender();
+    }
+
+    public AdventureManager getAdventure() {
+        return pluginContext.getAdventureManager();
+    }
+
     public FileConfiguration loadConfig(String relativePath) {
         File file = new File(getDataFolder(), relativePath);
         FileConfiguration configuration = YamlConfiguration.loadConfiguration(file);
@@ -106,7 +98,7 @@ public class WonderFeatureContext {
     public void saveConfig(String relativePath) {
         FileConfiguration configuration = loadedConfigs.get(relativePath);
         if (configuration == null) {
-            logger.passiveWarning("[WonderEvents] saveConfig called before loadConfig for '" + relativePath + "'");
+            logger.passiveWarning("saveConfig called before loadConfig for '" + relativePath + "'");
             return;
         }
 
@@ -118,7 +110,7 @@ public class WonderFeatureContext {
         try {
             configuration.save(file);
         } catch (IOException e) {
-            logger.severe("[WonderEvents] Could not save '" + relativePath + "': " + e.getMessage());
+            logger.severe("Could not save '" + relativePath + "': " + e.getMessage());
         }
     }
 
@@ -130,10 +122,7 @@ public class WonderFeatureContext {
     }
 
     public void addDefault(String relativePath, String path, Object value) {
-        FileConfiguration configuration = loadedConfigs.computeIfAbsent(
-                relativePath,
-                p -> YamlConfiguration.loadConfiguration(new File(getDataFolder(), p))
-        );
+        FileConfiguration configuration = loadedConfigs.computeIfAbsent(relativePath, p -> YamlConfiguration.loadConfiguration(new File(getDataFolder(), p)));
         configuration.addDefault(path, value);
         configuration.options().copyDefaults(true);
     }
@@ -146,7 +135,7 @@ public class WonderFeatureContext {
 
         try (InputStream in = featureClassLoader.getResourceAsStream(resourcePath)) {
             if (in == null) {
-                logger.passiveWarning("[WonderEvents] Resource not found in feature jar: " + resourcePath);
+                logger.passiveWarning("Resource not found in feature jar: " + resourcePath);
                 return;
             }
 
@@ -156,7 +145,7 @@ public class WonderFeatureContext {
             }
             Files.copy(in, target.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
-            logger.severe("[WonderEvents] Could not copy resource '" + resourcePath + "': " + e.getMessage());
+            logger.severe("Could not copy resource '" + resourcePath + "': " + e.getMessage());
         }
     }
 
@@ -168,7 +157,7 @@ public class WonderFeatureContext {
         registeredListeners.add(listener);
     }
 
-    public void registerCommand(ZFCommand command) {
+    public void registerCommand(WEACommand command) {
         if (command == null) {
             return;
         }
@@ -183,7 +172,7 @@ public class WonderFeatureContext {
 
         PluginManager pluginManager = pluginContext.getPlugin().getServer().getPluginManager();
         if (pluginManager.getPermission(permission.getName()) != null) {
-            logger.passiveWarning("[WonderEvents] Permission already exists and will not be registered twice: " + permission.getName());
+            logger.passiveWarning("Permission already exists and will not be registered twice: " + permission.getName());
             return;
         }
 
@@ -199,7 +188,7 @@ public class WonderFeatureContext {
         }
         registeredListeners.clear();
 
-        for (ZFCommand command : new ArrayList<>(registeredCommands)) {
+        for (WEACommand command : new ArrayList<>(registeredCommands)) {
             pluginContext.getCommandManager().unregisterAddonCommand(command);
         }
         registeredCommands.clear();
@@ -207,20 +196,10 @@ public class WonderFeatureContext {
         for (Permission permission : new ArrayList<>(registeredPermissions)) {
             try {
                 pluginManager.removePermission(permission);
-            } catch (Exception ignored) {
-                // Best-effort cleanup.
-            }
+            } catch (Exception ignored) {}
         }
         registeredPermissions.clear();
 
         loadedConfigs.clear();
-    }
-
-    public CommandSender getConsoleSender() {
-        return pluginContext.getPlugin().getServer().getConsoleSender();
-    }
-
-    public AdventureManager getAdventure() {
-        return pluginContext.getAdventureManager();
     }
 }

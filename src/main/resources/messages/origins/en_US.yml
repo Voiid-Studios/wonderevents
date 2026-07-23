@@ -1,34 +1,74 @@
+# ====== GENERIC COMMANDS ======
 command:
-  no_permissions: "&cYou don't have permissions to use this command."
-  unknown: "&cUnknown subcommand. Use /wonderevents help."
-  usage: "&eUse /wonderevents %COMMAND% for more information."
+  no_permissions: "&cYou don't have permissions to use this command"
+  unknown: "&cUnknown subcommand. Use /wonder help"
 
   help:
-    header: "&7Running &dWonderEvents &bv%VERSION%"
-    line: "&2> &3/%COMMAND% &7- %DESCRIPTION%"
-
-  status:
-    header: "&7WonderEvents runtime status:"
-    expansions: "&8• &fExpansions: &d%EXPANSIONS%"
-    addons: "&8• &fAddons: &d%ADDONS%"
-    commands: "&8• &fCommands: &d%COMMANDS%"
-    modules: "&8• &fModules: &d%MODULES%"
-    listeners: "&8• &fListeners: &d%LISTENERS%"
+    header: "&7Running &dWonderEvents &b%VERSION%"
+    lines:
+      - "&5> &3/wonder help &7- Shows this message."
+      - "&5> &3/wonder reload &b<all|configs|expansions|addons> &7- Reload configs, expansions & addons"
+      - "&5> &3/wonder addons enable &b<id> &7- Enable a addon"
+      - "&5> &3/wonder addons disable &b<id> &7- Disable a addon"
+      - "&5> &3/wonder addons list &7- List all active addons"
+      - "&5> &3/wonder expansions enable &b<id> &7- Enable a expansion"
+      - "&5> &3/wonder expansions disable &b<id> &7- Disable a expansion"
+      - "&5> &3/wonder expansions list &7- List all active expansions"
 
   reload:
-    start: "&7Reloading WonderEvents..."
-    config: "&aConfig reloaded."
-    messages: "&aMessages reloaded."
-    expansions: "&aExpansions reloaded: &d%EXPANSIONS%"
-    addons: "&aAddons reloaded: &d%ADDONS%"
-    done: "&aWonderEvents reloaded in &f%MS%ms"
+    process: "&7Reloading..."
+    success_config: "&aConfig reloaded"
+    success_messages: "&aMessages reloaded"
+    success_expansions: "&aExpansions reloaded: &d%EXPANSIONS%"
+    success_addons: "&aAddons reloaded: &d%ADDONS%"
+    done: "&aReloaded in &f%MS%ms"
 
   addons:
-    header: "&7Loaded addons:"
-    empty: "&eNo addons are currently loaded."
-    line: "&8• &d%NAME% &7v%VERSION%&8 by &f%AUTHOR%"
+    enable:
+      usage: "&cUse: /wonder addons enable <id>"
+      not_found: "&cAddon &e%ID% &cdoes not exist"
+      already: "&cAddon &e%ID% &cis already enabled"
+      success: "&aAddon &e%ID% &aenabled"
+    disable:
+      usage: "&cUse: /wonder addons disable <id>"
+      not_found: "&cAddon &e%ID% &cdoes not exist"
+      already: "&cAddon &e%ID% &cis already disabled"
+      success: "&aAddon &e%ID% &adisabled"
+    list:
+      title: "&eActive addons (%ADDONS%):"
+      entry: "%STATUSCOLOR%%NAME% &7(%VERSION%)"
+      empty: "&cIt's a little lonely here, isn't it? You don't have any addons..."
+      enabled: "&a"
+      disabled: "&c"
+      separator: "&f, "
 
   expansions:
-    header: "&7Loaded expansions:"
-    empty: "&eNo expansions are currently loaded."
-    line: "&8• &d%ID% &7- &f%NAME% &8(&f%VERSION%&8)"
+    enable:
+      usage: "&cUse: /wonder expansions enable <id>"
+      not_found: "&cExpansion &e%ID% &cdoes not exist"
+      already: "&cExpansion &e%ID% &cis already enabled"
+      success: "&aExpansion &e%ID% &aenabled"
+    disable:
+      usage: "&cUse: /wonder expansions disable <id>"
+      not_found: "&cExpansion &e%ID% &cdoes not exist"
+      already: "&cExpansion &e%ID% &cis already disabled"
+      success: "&aExpansion &e%ID% &adisabled"
+    list:
+      title: "&eActive expansions (%EXPANSIONS%):"
+      entry: "%STATUSCOLOR%%NAME% &7(%VERSION%)"
+      empty: "&cIt's a little lonely here, isn't it? You don't have any expansions..."
+      enabled: "&a"
+      disabled: "&c"
+      separator: "&f, "
+
+# ====== SYSTEM ======
+system:
+  update:
+    available:
+      - "&b│ ⚠ A stable update for WonderEvents is available"
+      - "&b│ "
+      - "&b│ Latest version: &f%LATEST%"
+      - "&b│ Current version: &f%CURRENT%"
+      - "&b│ "
+      - "&b│ You can download it at:"
+      - "&b│ &f%UPDATELINK%"

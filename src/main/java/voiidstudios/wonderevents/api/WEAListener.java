@@ -2,7 +2,6 @@ package voiidstudios.wonderevents.api;
 
 import voiidstudios.wonderevents.core.PluginContext;
 
-public interface ZFListener {
-
+public interface WEAListener {
     void register(PluginContext context);
 }

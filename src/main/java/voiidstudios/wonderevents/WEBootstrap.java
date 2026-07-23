@@ -5,17 +5,17 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import voiidstudios.wonderevents.addons.MagicAddonManager;
+import voiidstudios.wonderevents.addons.WonderAddonManager;
 import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.log.ConsoleBox;
 import voiidstudios.wonderevents.core.log.JavaLoggerImpl;
 import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.core.managers.MainCommandManager;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
-import voiidstudios.wonderevents.expansions.ExpansionManager;
+import voiidstudios.wonderevents.expansions.WonderExpansionManager;
+import voiidstudios.wonderevents.utils.DownloadSource;
 
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -29,12 +29,11 @@ public final class WEBootstrap extends JavaPlugin {
 
     private YALogger yaLogger;
     private PluginContext context;
-    private ExpansionManager expansionManager;
-    private MagicAddonManager addonManager;
+    private WonderExpansionManager expansionManager;
+    private WonderAddonManager addonManager;
     private MetricsManager metricsManager;
     private MainCommandManager mainCommandManager;
 
-    @Override
     public void onEnable() {
         long pluginStart = System.nanoTime();
 
@@ -45,21 +44,37 @@ public final class WEBootstrap extends JavaPlugin {
 
         sendConsoleInformationMessage();
 
+        yaLogger.process("Getting everything ready for you...");
+
         context = new PluginContext(this);
         metricsManager = new MetricsManager(context);
-        expansionManager = new ExpansionManager(context);
-        addonManager = new MagicAddonManager(context);
+        expansionManager = new WonderExpansionManager(context);
+        addonManager = new WonderAddonManager(context);
         mainCommandManager = new MainCommandManager(context);
+
+        yaLogger.process("Connecting the satellites...");
 
         context.setMetricsManager(metricsManager);
         context.setExpansionManager(expansionManager);
         context.setAddonManager(addonManager);
 
+        yaLogger.process("Looking for commands...");
+
+        long commandsStart = System.nanoTime();
         context.getCommandManager().loadCoreCommands();
         registerMainCommand();
+        long commandsMs = elapsedMs(commandsStart);
+
+        int commandsCount = context.getCommandManager().getLoadedCommandCount();
+        yaLogger.success("§bRegistered " + commandsCount + " commands. They're all ears! §7(" + commandsMs + "ms)");
+
+        yaLogger.process("Looking for expansions...");
 
         expansionManager.loadExpansions();
         expansionManager.enableExpansions();
+
+        yaLogger.process("Looking for addons...");
+
         addonManager.loadAddons();
         addonManager.enableAddons();
 
@@ -71,61 +86,82 @@ public final class WEBootstrap extends JavaPlugin {
         yaLogger.success("§aAll set! WonderEvents is set up correctly §7(" + totalMs + "ms)");
     }
 
-    @Override
     public void onDisable() {
+        yaLogger.process("Time to rest... wrapping up everything");
+
         if (addonManager != null) addonManager.disableAddons();
         if (expansionManager != null) expansionManager.disableExpansions();
         if (metricsManager != null) metricsManager.stop();
         if (context != null) context.getAdventureManager().stop();
+
+        yaLogger.success("Everything's tucked in. See you next time! zzz...");
+    }
+
+    public enum ReloadScope {
+        ALL,
+        CONFIGS,
+        EXPANSIONS,
+        ADDONS
     }
 
     public void reloadWonderEvents() {
-        reloadWonderEvents(Bukkit.getConsoleSender());
+        reloadWonderEvents(Bukkit.getConsoleSender(), ReloadScope.ALL);
     }
 
     public void reloadWonderEvents(CommandSender sender) {
+        reloadWonderEvents(sender, ReloadScope.ALL);
+    }
+
+    public void reloadWonderEvents(CommandSender sender, ReloadScope scope) {
         if (yaLogger == null || context == null) {
             return;
         }
 
+        if (scope == null) {
+            scope = ReloadScope.ALL;
+        }
+
         long start = System.nanoTime();
         var messages = context.getMessagesManager();
-        messages.send(sender, "command.reload.start");
+        messages.send(sender, "command.reload.process");
 
-        if (metricsManager != null) {
-            metricsManager.stop();
+        boolean reloadConfigs = scope == ReloadScope.ALL || scope == ReloadScope.CONFIGS;
+        boolean reloadExpansions = scope == ReloadScope.ALL || scope == ReloadScope.EXPANSIONS;
+        boolean reloadAddons = scope == ReloadScope.ALL || scope == ReloadScope.ADDONS;
+
+        if (reloadConfigs) {
+            context.getConfigManager().reload();
+            context.getMessagesManager().reload(context.getConfigManager().getLanguage());
+
+            Map<String, String> reloadPlaceholders = new java.util.HashMap<>();
+            reloadPlaceholders.put("%CONFIG%", context.getConfigManager().getConfigFile().getName());
+            messages.send(sender, "command.reload.success_config", reloadPlaceholders);
+            messages.send(sender, "command.reload.success_messages");
         }
 
-        context.getConfigManager().reload();
-        context.getMessagesManager().reload(context.getConfigManager().getLanguage());
+        if (reloadExpansions && expansionManager != null) {
+            int loadedExpansions = expansionManager.reloadExpansions();
 
-        int loadedExpansions = 0;
-        int loadedAddons = 0;
-
-        if (expansionManager != null) {
-            loadedExpansions = expansionManager.reloadExpansions();
-        }
-        if (addonManager != null) {
-            loadedAddons = addonManager.reloadAddons();
+            Map<String, String> expPlaceholders = new java.util.HashMap<>();
+            expPlaceholders.put("%EXPANSIONS%", String.valueOf(loadedExpansions));
+            messages.send(sender, "command.reload.success_expansions", expPlaceholders);
         }
 
-        if (metricsManager != null && context.getConfigManager().isMetricsEnabled()) {
-            metricsManager.start();
+        if (reloadAddons && addonManager != null) {
+            if (metricsManager != null) {
+                metricsManager.stop();
+            }
+
+            int loadedAddons = addonManager.reloadAddons();
+
+            if (metricsManager != null && context.getConfigManager().isMetricsEnabled()) {
+                metricsManager.start();
+            }
+
+            Map<String, String> addonPlaceholders = new java.util.HashMap<>();
+            addonPlaceholders.put("%ADDONS%", String.valueOf(loadedAddons));
+            messages.send(sender, "command.reload.success_addons", addonPlaceholders);
         }
-
-        Map<String, String> reloadPlaceholders = new java.util.HashMap<>();
-        reloadPlaceholders.put("%CONFIG%", context.getConfigManager().getConfigFile().getName());
-        messages.send(sender, "command.reload.config", reloadPlaceholders);
-
-        messages.send(sender, "command.reload.messages");
-
-        Map<String, String> expPlaceholders = new java.util.HashMap<>();
-        expPlaceholders.put("%EXPANSIONS%", String.valueOf(loadedExpansions));
-        messages.send(sender, "command.reload.expansions", expPlaceholders);
-
-        Map<String, String> addonPlaceholders = new java.util.HashMap<>();
-        addonPlaceholders.put("%ADDONS%", String.valueOf(loadedAddons));
-        messages.send(sender, "command.reload.addons", addonPlaceholders);
 
         Map<String, String> donePlaceholders = new java.util.HashMap<>();
         donePlaceholders.put("%MS%", String.valueOf(elapsedMs(start)));
@@ -174,6 +210,7 @@ public final class WEBootstrap extends JavaPlugin {
                 .title("§bWonderEvents")
                 .line("§fVersion: §b" + version)
                 .line("§fRunning on: " + platformInfo())
+                .line("§fDownloaded from: §b" + DownloadSource.detect(this))
                 .footer(dateText())
                 .build();
 
@@ -273,8 +310,7 @@ public final class WEBootstrap extends JavaPlugin {
                 "§fMade with <3 from Voiid Studios",
                 "§fThe Voiid Studios Team says hello ;)",
                 "§fVoiid Studios on top! <3",
-                "§fVoiid Studios was here :D",
-                "§fKeep playing & wondering with Voiid Studios <3",
+                "§fVoiid Studios was here :D"
         };
 
         return VS_MESSAGES[ThreadLocalRandom.current().nextInt(VS_MESSAGES.length)];

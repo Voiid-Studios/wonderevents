@@ -1,11 +1,13 @@
 package voiidstudios.wonderevents.core.metrics;
 
+import dev.faststats.ErrorTracker;
 import dev.faststats.bukkit.BukkitContext;
 import dev.faststats.data.Metric;
 
-import voiidstudios.wonderevents.addons.MagicAddonDescriptor;
+import voiidstudios.wonderevents.addons.WonderAddonDescriptor;
 import voiidstudios.wonderevents.core.PluginContext;
-import voiidstudios.wonderevents.expansions.ExpansionDescriptor;
+import voiidstudios.wonderevents.expansions.WonderExpansionDescriptor;
+import voiidstudios.wonderevents.utils.DownloadSource;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -15,8 +17,17 @@ import java.util.function.Function;
 public final class MetricsManager {
     private static final String PROJECT_TOKEN = "ead0df10ff128bd5370f44d02521e473";
 
+    // contextAware(): also passively catches uncaught errors thrown from the
+    // main plugin classloader. Addons/expansions run in their own classloader,
+    // so their errors must be reported manually via trackError() wherever
+    // they're caught (loaders/managers already catch Throwable there).
+    private static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware()
+            .ignoreError(ClassNotFoundException.class);
+
     private final PluginContext context;
+    private final long startTime = System.currentTimeMillis();
     private BukkitContext bukkitContext;
+    private String downloadSource;
 
     public MetricsManager(PluginContext context) {
         this.context = context;
@@ -27,10 +38,18 @@ public final class MetricsManager {
             return;
         }
 
+        downloadSource = DownloadSource.detect(context.getPlugin());
+
+        ERROR_TRACKER.getAttributes()
+                .put("download_source", downloadSource);
+
         bukkitContext = new BukkitContext.Factory(context.getPlugin(), PROJECT_TOKEN)
+                .errorTrackerService(ERROR_TRACKER)
                 .metrics(factory -> factory
                         .addMetric(Metric.numberMap("expansions", this::buildExpansionChart))
                         .addMetric(Metric.numberMap("addons", this::buildAddonChart))
+                        .addMetric(Metric.string("download_source", () -> downloadSource))
+                        .addMetric(Metric.number("uptime_days", () -> (System.currentTimeMillis() - startTime) / (1000L * 60 * 60 * 24)))
                         .create())
                 .create();
 
@@ -44,14 +63,18 @@ public final class MetricsManager {
         }
     }
 
+    public static ErrorTracker getErrorTracker() {
+        return ERROR_TRACKER;
+    }
+
     private Map<String, Integer> buildExpansionChart() {
         if (context.getExpansionManager() == null) {
             return Map.of();
         }
         return buildFlattened(
                 context.getExpansionManager().getLoadedDescriptors(),
-                ExpansionDescriptor::getName,
-                ExpansionDescriptor::getVersion
+                WonderExpansionDescriptor::getName,
+                WonderExpansionDescriptor::getVersion
         );
     }
 
@@ -61,16 +84,12 @@ public final class MetricsManager {
         }
         return buildFlattened(
                 context.getAddonManager().getLoadedDescriptors(),
-                MagicAddonDescriptor::getName,
-                MagicAddonDescriptor::getVersion
+                WonderAddonDescriptor::getName,
+                WonderAddonDescriptor::getVersion
         );
     }
 
-    private <T> Map<String, Integer> buildFlattened(
-            List<T> descriptors,
-            Function<T, String> nameGetter,
-            Function<T, String> versionGetter
-    ) {
+    private <T> Map<String, Integer> buildFlattened(List<T> descriptors, Function<T, String> nameGetter, Function<T, String> versionGetter) {
         Map<String, Integer> data = new LinkedHashMap<>();
         if (descriptors == null || descriptors.isEmpty()) {
             return data;

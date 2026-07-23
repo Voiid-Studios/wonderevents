@@ -2,11 +2,10 @@ package voiidstudios.wonderevents.api;
 
 import voiidstudios.wonderevents.core.PluginContext;
 
-public final class ZFAPI {
-
+public final class WEAPI {
     private final PluginContext context;
 
-    public ZFAPI(PluginContext context) {
+    public WEAPI(PluginContext context) {
         this.context = context;
     }
 

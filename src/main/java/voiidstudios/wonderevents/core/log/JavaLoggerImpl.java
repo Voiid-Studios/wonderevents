@@ -12,7 +12,6 @@ public class JavaLoggerImpl implements EpicPlatformLogger {
         this.logger = logger;
     }
 
-    @Override
     public void log(EpicLogLevel level, String message) {
         if (level == EpicLogLevel.WARNING) {
             logger.warning(message);
@@ -23,7 +22,6 @@ public class JavaLoggerImpl implements EpicPlatformLogger {
         }
     }
 
-    @Override
     public void log(EpicLogLevel level, String message, Throwable throwable) {
         if (level == EpicLogLevel.WARNING) {
             logger.log(Level.WARNING, message, throwable);

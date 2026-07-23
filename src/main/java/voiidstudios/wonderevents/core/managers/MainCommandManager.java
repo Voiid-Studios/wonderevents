@@ -5,7 +5,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 
-import voiidstudios.wonderevents.api.ZFCommand;
+import voiidstudios.wonderevents.api.WEACommand;
 import voiidstudios.wonderevents.core.PluginContext;
 
 import java.util.ArrayList;
@@ -21,17 +21,16 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
         this.context = context;
     }
 
-    @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0) {
-            ZFCommand help = context.getCommandManager().findCommand("help");
+            WEACommand help = context.getCommandManager().findCommand("help");
             if (help != null) {
                 help.execute(sender, new String[0]);
             }
             return true;
         }
 
-        ZFCommand subcommand = context.getCommandManager().findCommand(args[0]);
+        WEACommand subcommand = context.getCommandManager().findCommand(args[0]);
         if (subcommand == null) {
             context.getMessagesManager().send(sender, "command.unknown");
             return true;
@@ -45,19 +44,16 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
         String[] subArgs = Arrays.copyOfRange(args, 1, args.length);
         boolean handled = subcommand.execute(sender, subArgs);
         if (!handled) {
-            java.util.Map<String, String> placeholders = new java.util.HashMap<>();
-            placeholders.put("%COMMAND%", subcommand.getName());
-            context.getMessagesManager().send(sender, "command.usage", placeholders);
+            context.getMessagesManager().send(sender, "command.unknown");
         }
         return true;
     }
 
-    @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length <= 1) {
             String prefix = args.length == 0 ? "" : args[0];
             List<String> suggestions = new ArrayList<>();
-            for (ZFCommand subcommand : context.getCommandManager().getSubcommands()) {
+            for (WEACommand subcommand : context.getCommandManager().getSubcommands()) {
                 if (hasPermission(sender, subcommand.getPermission())) {
                     addIfMatches(suggestions, subcommand.getName(), prefix);
                     for (String aliasName : subcommand.getAliases()) {
@@ -68,7 +64,7 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
             return suggestions;
         }
 
-        ZFCommand subcommand = context.getCommandManager().findCommand(args[0]);
+        WEACommand subcommand = context.getCommandManager().findCommand(args[0]);
         if (subcommand == null) {
             return Collections.emptyList();
         }
@@ -83,9 +79,8 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
     }
 
     private static void addIfMatches(List<String> suggestions, String value, String prefix) {
-        if (value == null) {
-            return;
-        }
+        if (value == null) return;
+        
         String normalized = value.toLowerCase(Locale.ROOT);
         String normalizedPrefix = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
         if (normalizedPrefix.isEmpty() || normalized.startsWith(normalizedPrefix)) {

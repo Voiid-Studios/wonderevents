@@ -21,9 +21,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
 public final class ClassDiscovery {
-
-    private ClassDiscovery() {
-    }
+    private ClassDiscovery() {}
 
     public static List<Class<?>> findClasses(JavaPlugin plugin, String packageName) {
         Set<Class<?>> classes = new LinkedHashSet<>();
@@ -49,7 +47,7 @@ public final class ClassDiscovery {
             }
             return expectedType.cast(instance);
         } catch (ReflectiveOperationException exception) {
-            throw new IllegalStateException("No pude crear una instancia de " + type.getName(), exception);
+            throw new IllegalStateException("Could not create an instance of " + type.getName(), exception);
         }
     }
 
@@ -94,7 +92,7 @@ public final class ClassDiscovery {
                 }
             }
         } catch (IOException exception) {
-            logWarning(plugin, "No pude escanear el paquete " + packageName + ": " + exception.getMessage());
+            logWarning(plugin, "Could not scan package " + packageName + ": " + exception.getMessage());
         }
     }
 
@@ -110,7 +108,7 @@ public final class ClassDiscovery {
                 addClass(plugin, toClassName(name), classes);
             }
         } catch (IOException exception) {
-            logWarning(plugin, "No pude leer el jar para escanear " + packageName + ": " + exception.getMessage());
+            logWarning(plugin, "Could not read the jar to scan " + packageName + ": " + exception.getMessage());
         }
     }
 
@@ -141,7 +139,7 @@ public final class ClassDiscovery {
                 classes.add(type);
             }
         } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
-            plugin.getLogger().fine("Clase ignorada durante el descubrimiento: " + className);
+            plugin.getLogger().fine("Class ignored during discovery: " + className);
         }
     }
 

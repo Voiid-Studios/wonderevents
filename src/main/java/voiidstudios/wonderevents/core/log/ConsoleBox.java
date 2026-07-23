@@ -5,13 +5,11 @@ import java.util.List;
 import java.util.regex.Pattern;
 
 public final class ConsoleBox {
-
     private static final Pattern SECTION_COLOR_PATTERN = Pattern.compile("(?i)\u00A7[0-9A-FK-ORX]");
     private static final Pattern AMPERSAND_COLOR_PATTERN = Pattern.compile("(?i)&[0-9A-FK-ORX]");
     private static final Pattern ANSI_PATTERN = Pattern.compile("\u001B\\[[;\\d]*m");
 
-    private ConsoleBox() {
-    }
+    private ConsoleBox() {}
 
     public static Builder builder() {
         return new Builder();
@@ -58,7 +56,6 @@ public final class ConsoleBox {
     }
 
     public static final class Builder {
-
         private final List<String> lines = new ArrayList<>();
         private String title;
         private String footer;

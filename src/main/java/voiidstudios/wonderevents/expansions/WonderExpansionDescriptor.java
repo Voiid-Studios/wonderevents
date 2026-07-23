@@ -5,14 +5,10 @@ import voiidstudios.wonderevents.core.manifest.WonderManifest.DependencyRule;
 
 import java.util.List;
 
-/**
- * Immutable descriptor for an expansion loaded from {@code wonder-manifest.yml}.
- */
-public final class ExpansionDescriptor {
-
+public final class WonderExpansionDescriptor {
     private final WonderManifest manifest;
 
-    public ExpansionDescriptor(WonderManifest manifest) {
+    public WonderExpansionDescriptor(WonderManifest manifest) {
         this.manifest = manifest;
     }
 
@@ -48,6 +44,18 @@ public final class ExpansionDescriptor {
         return manifest.getMinCoreVersion();
     }
 
+    public String getMaxCoreVersion() {
+        return manifest.getMaxCoreVersion();
+    }
+
+    public String getMinMinecraftVersion() {
+        return manifest.getMinMinecraftVersion();
+    }
+
+    public String getMaxMinecraftVersion() {
+        return manifest.getMaxMinecraftVersion();
+    }
+
     public List<DependencyRule> getPluginDependencies() {
         return manifest.getPluginDependencies();
     }
@@ -64,7 +72,6 @@ public final class ExpansionDescriptor {
         return manifest.getAddonDependencies();
     }
 
-    @Override
     public String toString() {
         String author = manifest.getAuthor().isBlank() ? "Unknown" : manifest.getAuthor();
         return manifest.getName() + " v" + manifest.getVersion() + " by " + author;

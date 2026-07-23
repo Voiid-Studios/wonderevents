@@ -7,7 +7,6 @@ import voiidstudios.wonderevents.WEBootstrap;
 import java.lang.reflect.Array;
 
 public class UniversalFormatter {
-
     private final Plugin plugin;
     private Boolean hasMiniMessage;
     private Boolean hasLegacySerializer;
@@ -36,7 +35,7 @@ public class UniversalFormatter {
                 return miniMessageComponent;
             }
         } catch (ReflectiveOperationException | LinkageError exception) {
-            warnFallback("El formateador universal no está disponible", exception);
+            warnFallback("The universal formatter is not available", exception);
         }
 
         return TextUtils.toLegacy(text);
@@ -142,7 +141,7 @@ public class UniversalFormatter {
         }
 
         warned = true;
-        String warning = message + ", así que uso el formato clásico: "
+        String warning = message + ", so falling back to the legacy format: "
                 + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
 
         if (plugin instanceof WEBootstrap we && we.getYALogger() != null) {

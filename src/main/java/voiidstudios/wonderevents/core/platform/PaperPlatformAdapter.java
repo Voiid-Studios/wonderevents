@@ -10,7 +10,6 @@ import voiidstudios.wonderevents.utils.UniversalFormatter;
 import java.lang.reflect.Method;
 
 public class PaperPlatformAdapter implements PlatformAdapter {
-
     private final Plugin plugin;
     private final UniversalFormatter formatter;
     private Class<?> audienceClass;
@@ -25,9 +24,7 @@ public class PaperPlatformAdapter implements PlatformAdapter {
     }
 
     public static boolean isAvailable() {
-        return hasClass("io.papermc.paper.configuration.Configuration")
-                || hasClass("com.destroystokyo.paper.PaperConfig")
-                || hasClass("io.papermc.paper.threadedregions.RegionizedServer");
+        return hasClass("io.papermc.paper.configuration.Configuration") || hasClass("com.destroystokyo.paper.PaperConfig") || hasClass("io.papermc.paper.threadedregions.RegionizedServer");
     }
 
     private static boolean hasClass(String className) {
@@ -45,29 +42,25 @@ public class PaperPlatformAdapter implements PlatformAdapter {
             this.componentClass = Class.forName("net.kyori.adventure.text.Component");
             this.audienceSendMessageMethod = audienceClass.getMethod("sendMessage", componentClass);
         } catch (ReflectiveOperationException | LinkageError exception) {
-            warnSendFallback("Adventure no está disponible", exception);
+            warnSendFallback("Adventure is not available", exception);
             this.audienceClass = null;
             this.componentClass = null;
             this.audienceSendMessageMethod = null;
         }
     }
 
-    @Override
     public String getName() {
         return supportsAdventure() ? "Paper/Fork + Adventure" : "Paper/Fork";
     }
 
-    @Override
     public boolean isPaper() {
         return true;
     }
 
-    @Override
     public boolean supportsAdventure() {
         return audienceClass != null && componentClass != null && audienceSendMessageMethod != null;
     }
 
-    @Override
     public void sendMessage(CommandSender sender, String message) {
         Object formatted = formatter.format(message);
         if (formatted instanceof String text) {
@@ -83,7 +76,7 @@ public class PaperPlatformAdapter implements PlatformAdapter {
         try {
             audienceSendMessageMethod.invoke(sender, formatted);
         } catch (ReflectiveOperationException | LinkageError exception) {
-            warnSendFallback("No pude enviar el componente de Adventure", exception);
+            warnSendFallback("Could not send the Adventure component", exception);
             sender.sendMessage(TextUtils.toLegacy(message));
         }
     }
@@ -94,8 +87,7 @@ public class PaperPlatformAdapter implements PlatformAdapter {
         }
 
         warnedSendFallback = true;
-        String warning = message + ", asi que uso el modo clasico: "
-                + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
+        String warning = message + ", so falling back to legacy mode: " + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
 
         if (plugin instanceof WEBootstrap met && met.getYALogger() != null) {
             met.getYALogger().warning(warning);

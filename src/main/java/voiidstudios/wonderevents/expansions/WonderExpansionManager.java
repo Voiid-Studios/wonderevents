@@ -1,18 +1,21 @@
 package voiidstudios.wonderevents.expansions;
 
+import dev.faststats.Attributes;
 import org.bukkit.Bukkit;
 import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 
-import voiidstudios.wonderevents.api.WonderBootstrap;
+import voiidstudios.wonderevents.api.WEABootstrap;
 import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
 import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.manifest.WonderManifestLoader;
 import voiidstudios.wonderevents.core.manifest.VersionUtil;
+import voiidstudios.wonderevents.core.manifest.ServerVersionUtil;
 import voiidstudios.wonderevents.core.manifest.PlatformDependencyChecker;
 import voiidstudios.wonderevents.core.loader.FeatureClassLoader;
+import voiidstudios.wonderevents.core.metrics.MetricsManager;
 
 import java.io.File;
 import java.net.URL;
@@ -23,17 +26,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Handles WonderEvents expansions.
- */
-public final class ExpansionManager {
-
+public final class WonderExpansionManager {
     private final PluginContext context;
     private final YALogger logger;
     private final File folder;
-    private final Map<String, ExpansionEntry> loaded = new LinkedHashMap<>();
+    private final Map<String, WonderExpansionEntry> loaded = new LinkedHashMap<>();
+    private final java.util.Set<String> disabled = new java.util.LinkedHashSet<>();
 
-    public ExpansionManager(PluginContext context) {
+    public WonderExpansionManager(PluginContext context) {
         this.context = context;
         this.logger = context.getPlugin().getYALogger();
         this.folder = new File(context.getPlugin().getDataFolder(), "expansions");
@@ -44,7 +44,7 @@ public final class ExpansionManager {
 
         File[] jars = folder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
         if (jars == null || jars.length == 0) {
-            logger.passiveInfo("[Expansions] No expansions found in expansions/");
+            logger.passiveInfo("[Expansions] §9Where did they go? I haven't found them in /expansions...");
             return 0;
         }
 
@@ -83,7 +83,7 @@ public final class ExpansionManager {
                     continue;
                 }
 
-                ExpansionEntry entry = loadEntry(jar, manifest);
+                WonderExpansionEntry entry = loadEntry(jar, manifest);
                 if (entry == null) {
                     continue;
                 }
@@ -96,8 +96,9 @@ public final class ExpansionManager {
                     logger.success("[Expansions] Loaded expansion: " + entry.getDescriptor().getName());
                     loadedNow++;
                     progress = true;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.passiveSevere("[Expansions] Failed to load expansion '" + expansionId + "': onLoad() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                    track(e, "onLoad", expansionId);
                     entry.closeClassLoader();
                 }
             }
@@ -107,7 +108,9 @@ public final class ExpansionManager {
 
         if (!pending.isEmpty()) {
             for (File jar : pending) {
-                logger.passiveWarning("[Expansions] Could not load " + jar.getName() + " because some required dependencies are still missing.");
+                WonderManifest manifest = WonderManifestLoader.load(jar, logger);
+                String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
+                logger.passiveWarning("[Expansions] Could not load " + jar.getName() + " because a dependency is missing: " + missing);
             }
         }
 
@@ -115,11 +118,12 @@ public final class ExpansionManager {
     }
 
     public void enableExpansions() {
-        for (ExpansionEntry entry : loaded.values()) {
+        for (WonderExpansionEntry entry : loaded.values()) {
             try {
                 entry.getExpansion().onEnable();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.passiveSevere("[Expansions] Failed to enable expansion '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                track(e, "onEnable", entry.getDescriptor().getName());
             }
         }
     }
@@ -130,11 +134,12 @@ public final class ExpansionManager {
         Map<String, File> currentJars = discoverExpansionJars();
         List<String> previousOrder = new ArrayList<>(loaded.keySet());
 
-        int disabled = disableMissingExpansions(currentJars);
-        java.util.Set<String> newlyLoaded = loadNewExpansions(currentJars);
-        int reloaded = reloadPresentExpansions(currentJars, previousOrder, newlyLoaded);
+        disableMissingExpansions(currentJars);
 
-        logger.success("[Expansions] Reload complete. Active expansions: " + loaded.size());
+        java.util.Set<String> newlyLoaded = loadNewExpansions(currentJars);
+        reloadPresentExpansions(currentJars, previousOrder, newlyLoaded);
+
+        logger.success("[Expansions] Reloaded! Active expansions: " + loaded.size());
         return loaded.size();
     }
 
@@ -170,7 +175,8 @@ public final class ExpansionManager {
                 continue;
             }
 
-            ExpansionEntry entry = loaded.remove(id);
+            WonderExpansionEntry entry = loaded.remove(id);
+            this.disabled.remove(id);
             if (entry == null) {
                 continue;
             }
@@ -178,14 +184,16 @@ public final class ExpansionManager {
             String name = entry.getDescriptor().getName();
             try {
                 entry.getExpansion().onDisable();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.passiveSevere("[Expansions] Failed to disable expansion '" + name + "': onDisable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
-            } catch (Exception cleanupError) {
+            } catch (Throwable cleanupError) {
                 logger.passiveSevere("[Expansions] Failed to clean up expansion '" + name + "': runtime cleanup threw an error. Please contact the expansion developer. Details: " + cleanupError.getMessage());
+                track(cleanupError, "cleanup", name);
             }
 
             entry.closeClassLoader();
@@ -236,7 +244,7 @@ public final class ExpansionManager {
                     continue;
                 }
 
-                ExpansionEntry entry = loadEntry(jar, manifest);
+                WonderExpansionEntry entry = loadEntry(jar, manifest);
                 if (entry == null) {
                     continue;
                 }
@@ -249,14 +257,16 @@ public final class ExpansionManager {
 
                     try {
                         entry.getExpansion().onEnable();
-                    } catch (Exception enableError) {
+                    } catch (Throwable enableError) {
                         logger.passiveSevere("[Expansions] Failed to enable expansion '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the expansion developer. Details: " + enableError.getMessage());
+                        track(enableError, "onEnable", entry.getDescriptor().getName());
                     }
 
                     logger.success("[Expansions] Loaded expansion: " + entry.getDescriptor().getName());
                     progress = true;
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     logger.passiveSevere("[Expansions] Failed to load expansion '" + expansionId + "': onLoad() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                    track(e, "onLoad", expansionId);
                     entry.closeClassLoader();
                 }
             }
@@ -266,7 +276,9 @@ public final class ExpansionManager {
 
         if (!pending.isEmpty()) {
             for (File jar : pending) {
-                logger.passiveWarning("[Expansions] Could not load " + jar.getName() + " because some required dependencies are still missing.");
+                WonderManifest manifest = WonderManifestLoader.load(jar, logger);
+                String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
+                logger.passiveWarning("[Expansions] Could not load " + jar.getName() + " because a dependency is missing: " + missing);
             }
         }
 
@@ -281,7 +293,7 @@ public final class ExpansionManager {
                 continue;
             }
 
-            ExpansionEntry entry = loaded.get(id);
+            WonderExpansionEntry entry = loaded.get(id);
             if (entry == null) {
                 continue;
             }
@@ -289,8 +301,9 @@ public final class ExpansionManager {
             try {
                 entry.getExpansion().onReload();
                 reloaded++;
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.passiveWarning("[Expansions] Failed to reload expansion '" + entry.getDescriptor().getName() + "': onReload() threw an error. Details: " + e.getMessage());
+                track(e, "onReload", entry.getDescriptor().getName());
             }
         }
 
@@ -298,21 +311,23 @@ public final class ExpansionManager {
     }
 
     public void disableExpansions() {
-        List<ExpansionEntry> entries = new ArrayList<>(loaded.values());
+        List<WonderExpansionEntry> entries = new ArrayList<>(loaded.values());
         Collections.reverse(entries);
 
-        for (ExpansionEntry entry : entries) {
+        for (WonderExpansionEntry entry : entries) {
             String name = entry.getDescriptor().getName();
             try {
                 entry.getExpansion().onDisable();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 logger.passiveWarning("[Expansions] Failed to disable expansion '" + name + "': " + e.getMessage());
+                track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
-            } catch (Exception cleanupError) {
+            } catch (Throwable cleanupError) {
                 logger.passiveWarning("[Expansions] Cleanup failed for expansion '" + name + "': " + cleanupError.getMessage());
+                track(cleanupError, "cleanup", name);
             }
 
             entry.closeClassLoader();
@@ -320,15 +335,16 @@ public final class ExpansionManager {
         }
 
         loaded.clear();
+        disabled.clear();
     }
 
     public int getLoadedCount() {
         return loaded.size();
     }
 
-    public List<ExpansionDescriptor> getLoadedDescriptors() {
-        List<ExpansionDescriptor> descriptors = new ArrayList<>();
-        for (ExpansionEntry entry : loaded.values()) {
+    public List<WonderExpansionDescriptor> getLoadedDescriptors() {
+        List<WonderExpansionDescriptor> descriptors = new ArrayList<>();
+        for (WonderExpansionEntry entry : loaded.values()) {
             descriptors.add(entry.getDescriptor());
         }
         return Collections.unmodifiableList(descriptors);
@@ -336,6 +352,74 @@ public final class ExpansionManager {
 
     public boolean isLoaded(String id) {
         return id != null && loaded.containsKey(id.toLowerCase());
+    }
+
+    public boolean isEnabled(String id) {
+        if (id == null) {
+            return false;
+        }
+        String normalized = id.toLowerCase();
+        return loaded.containsKey(normalized) && !disabled.contains(normalized);
+    }
+
+    public ExpansionToggleResult enableExpansion(String id) {
+        if (id == null) {
+            return ExpansionToggleResult.NOT_FOUND;
+        }
+
+        String normalized = id.toLowerCase();
+        WonderExpansionEntry entry = loaded.get(normalized);
+        if (entry == null) {
+            return ExpansionToggleResult.NOT_FOUND;
+        }
+
+        if (!disabled.contains(normalized)) {
+            return ExpansionToggleResult.ALREADY;
+        }
+
+        try {
+            entry.getExpansion().onEnable();
+        } catch (Throwable e) {
+            logger.passiveSevere("[Expansions] Failed to enable expansion '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+            track(e, "onEnable", entry.getDescriptor().getName());
+        }
+
+        disabled.remove(normalized);
+        logger.passiveInfo("[Expansions] Enabled expansion: " + entry.getDescriptor().getName());
+        return ExpansionToggleResult.SUCCESS;
+    }
+
+    public ExpansionToggleResult disableExpansion(String id) {
+        if (id == null) {
+            return ExpansionToggleResult.NOT_FOUND;
+        }
+
+        String normalized = id.toLowerCase();
+        WonderExpansionEntry entry = loaded.get(normalized);
+        if (entry == null) {
+            return ExpansionToggleResult.NOT_FOUND;
+        }
+
+        if (disabled.contains(normalized)) {
+            return ExpansionToggleResult.ALREADY;
+        }
+
+        try {
+            entry.getExpansion().onDisable();
+        } catch (Throwable e) {
+            logger.passiveSevere("[Expansions] Failed to disable expansion '" + entry.getDescriptor().getName() + "': onDisable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+            track(e, "onDisable", entry.getDescriptor().getName());
+        }
+
+        disabled.add(normalized);
+        logger.passiveInfo("[Expansions] Disabled expansion: " + entry.getDescriptor().getName());
+        return ExpansionToggleResult.SUCCESS;
+    }
+
+    public enum ExpansionToggleResult {
+        SUCCESS,
+        ALREADY,
+        NOT_FOUND
     }
 
     public File getExpansionDataFolder(String id) {
@@ -346,33 +430,40 @@ public final class ExpansionManager {
         return expansionFolder;
     }
 
-    public File getExpansionDataFolder(ExpansionDescriptor descriptor) {
+    public File getExpansionDataFolder(WonderExpansionDescriptor descriptor) {
         return getExpansionDataFolder(descriptor == null ? null : descriptor.getId());
     }
 
-    private ExpansionEntry loadEntry(File jarFile, WonderManifest manifest) {
+    private WonderExpansionEntry loadEntry(File jarFile, WonderManifest manifest) {
         URLClassLoader classLoader;
         try {
             classLoader = new FeatureClassLoader(
                     new URL[]{jarFile.toURI().toURL()},
                     context.getPlugin().getClass().getClassLoader()
             );
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.passiveWarning("[Expansions] Could not create a loader for " + manifest.getName() + ": " + e.getMessage());
+            track(e, "classloader-creation", manifest.getId());
             return null;
         }
 
-        WonderBootstrap expansion;
+        WEABootstrap expansion;
         try {
             Class<?> mainClass = classLoader.loadClass(manifest.getBootstrap());
-            if (!WonderBootstrap.class.isAssignableFrom(mainClass)) {
-                logger.passiveWarning("[Expansions] The bootstrap class in " + manifest.getName() + " does not extend WonderBootstrap.");
+            if (!WEABootstrap.class.isAssignableFrom(mainClass)) {
+                logger.passiveWarning("[Expansions] The bootstrap class in " + manifest.getName() + " does not extend WEABootstrap.");
                 closeQuietly(classLoader);
                 return null;
             }
-            expansion = (WonderBootstrap) mainClass.getDeclaredConstructor().newInstance();
-        } catch (Exception e) {
+            expansion = (WEABootstrap) mainClass.getDeclaredConstructor().newInstance();
+        } catch (LinkageError e) {
+            logger.passiveSevere("[Expansions] Could not start " + manifest.getName() + ": it looks like it was built against a different/older WonderEvents API (" + e.getClass().getSimpleName() + ": " + e.getMessage() + "). Ask the expansion developer to recompile it against this WonderEvents version.");
+            track(e, "bootstrap-instantiation", manifest.getId());
+            closeQuietly(classLoader);
+            return null;
+        } catch (Throwable e) {
             logger.passiveWarning("[Expansions] Could not start " + manifest.getName() + ": the bootstrap class could not be created. Details: " + e.getMessage());
+            track(e, "bootstrap-instantiation", manifest.getId());
             closeQuietly(classLoader);
             return null;
         }
@@ -385,16 +476,57 @@ public final class ExpansionManager {
         );
 
         registerManifestPermissions(featureContext, manifest);
-        expansion.init(featureContext);
-        return new ExpansionEntry(expansion, featureContext, classLoader, new ExpansionDescriptor(manifest), jarFile);
+
+        try {
+            expansion.init(featureContext);
+        } catch (LinkageError e) {
+            logger.passiveSevere("[Expansions] Could not start " + manifest.getName() + ": it looks like it was built against a different/older WonderEvents API (" + e.getClass().getSimpleName() + ": " + e.getMessage() + "). Ask the expansion developer to recompile it against this WonderEvents version.");
+            track(e, "init", manifest.getId());
+            closeQuietly(classLoader);
+            return null;
+        } catch (Throwable e) {
+            logger.passiveSevere("[Expansions] Failed to initialize " + manifest.getName() + ": init() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+            track(e, "init", manifest.getId());
+            closeQuietly(classLoader);
+            return null;
+        }
+
+        return new WonderExpansionEntry(expansion, featureContext, classLoader, new WonderExpansionDescriptor(manifest), jarFile);
     }
 
     private LoadDecision canLoad(WonderManifest manifest) {
-        String required = manifest.getMinCoreVersion();
-        if (required != null && !required.isBlank()) {
+        String minCore = manifest.getMinCoreVersion();
+        if (minCore != null && !minCore.isBlank()) {
             String current = VersionUtil.normalize(context.getPlugin().getDescription().getVersion());
-            if (!VersionUtil.isAtLeast(current, required)) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires WonderEvents " + required + " or newer, but the current version is " + current + ".");
+            if (!VersionUtil.isAtLeast(current, minCore)) {
+                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires WonderEvents " + minCore + " or newer, but the current version is " + current);
+                return LoadDecision.REJECTED;
+            }
+        }
+
+        String maxCore = manifest.getMaxCoreVersion();
+        if (maxCore != null && !maxCore.isBlank()) {
+            String current = VersionUtil.normalize(context.getPlugin().getDescription().getVersion());
+            if (!VersionUtil.isAtMost(current, maxCore)) {
+                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires WonderEvents " + maxCore + " or older, but the current version is " + current);
+                return LoadDecision.REJECTED;
+            }
+        }
+
+        String minMc = manifest.getMinMinecraftVersion();
+        if (minMc != null && !minMc.isBlank()) {
+            String currentMc = ServerVersionUtil.getMinecraftVersion();
+            if (!VersionUtil.isAtLeast(currentMc, minMc)) {
+                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires Minecraft " + minMc + " or newer, but the server is running " + currentMc);
+                return LoadDecision.REJECTED;
+            }
+        }
+
+        String maxMc = manifest.getMaxMinecraftVersion();
+        if (maxMc != null && !maxMc.isBlank()) {
+            String currentMc = ServerVersionUtil.getMinecraftVersion();
+            if (!VersionUtil.isAtMost(currentMc, maxMc)) {
+                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires Minecraft " + maxMc + " or older, but the server is running " + currentMc);
                 return LoadDecision.REJECTED;
             }
         }
@@ -432,13 +564,40 @@ public final class ExpansionManager {
         return LoadDecision.READY;
     }
 
+    private String describeMissingDependency(WonderManifest manifest) {
+        for (WonderManifest.DependencyRule rule : manifest.getExpansionDependencies()) {
+            boolean satisfied = rule.isSatisfiedBy(this::isLoaded);
+            if (rule.isRequired() && !satisfied) {
+                return "expansion " + rule.describe();
+            }
+        }
+
+        for (WonderManifest.DependencyRule rule : manifest.getAddonDependencies()) {
+            boolean satisfied = rule.isSatisfiedBy(id -> context.getAddonManager() != null && context.getAddonManager().isLoaded(id));
+            if (rule.isRequired() && !satisfied) {
+                return "addon " + rule.describe();
+            }
+        }
+
+        return "an unknown dependency";
+    }
+
+    private void track(Throwable e, String stage, String expansionId) {
+        MetricsManager.getErrorTracker().trackError(e)
+                .attributes(Attributes.empty()
+                        .put("component", "expansion-manager")
+                        .put("stage", stage)
+                        .put("expansion", expansionId))
+                .handled(true);
+    }
+
     private void ensureFolder() {
         if (!folder.exists()) {
             folder.mkdirs();
         }
     }
 
-    private void ensureExpansionFolder(ExpansionDescriptor descriptor) {
+    private void ensureExpansionFolder(WonderExpansionDescriptor descriptor) {
         getExpansionDataFolder(descriptor);
     }
 
@@ -485,7 +644,7 @@ public final class ExpansionManager {
     private void closeQuietly(URLClassLoader cl) {
         try {
             cl.close();
-        } catch (Exception ignored) {
+        } catch (Throwable ignored) {
         }
     }
 

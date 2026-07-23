@@ -7,13 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-/**
- * Parsed contents of {@code wonder-manifest.yml}.
- *
- * <p>The same format is used by both expansions and addons.
- */
 public final class WonderManifest {
-
     public static final String FILE_NAME = "wonder-manifest.yml";
 
     private final String id;
@@ -23,6 +17,9 @@ public final class WonderManifest {
     private final String description;
     private final String bootstrap;
     private final String minCoreVersion;
+    private final String maxCoreVersion;
+    private final String minMinecraftVersion;
+    private final String maxMinecraftVersion;
 
     private final List<DependencyRule> pluginDependencies;
     private final List<DependencyRule> platformDependencies;
@@ -39,6 +36,9 @@ public final class WonderManifest {
             String description,
             String bootstrap,
             String minCoreVersion,
+            String maxCoreVersion,
+            String minMinecraftVersion,
+            String maxMinecraftVersion,
             List<DependencyRule> pluginDependencies,
             List<DependencyRule> platformDependencies,
             List<DependencyRule> expansionDependencies,
@@ -53,6 +53,9 @@ public final class WonderManifest {
         this.description = emptyIfNull(description);
         this.bootstrap = emptyIfNull(bootstrap);
         this.minCoreVersion = emptyIfNull(minCoreVersion);
+        this.maxCoreVersion = emptyIfNull(maxCoreVersion);
+        this.minMinecraftVersion = emptyIfNull(minMinecraftVersion);
+        this.maxMinecraftVersion = emptyIfNull(maxMinecraftVersion);
         this.pluginDependencies = immutableList(pluginDependencies);
         this.platformDependencies = immutableList(platformDependencies);
         this.expansionDependencies = immutableList(expansionDependencies);
@@ -87,6 +90,18 @@ public final class WonderManifest {
 
     public String getMinCoreVersion() {
         return minCoreVersion;
+    }
+
+    public String getMaxCoreVersion() {
+        return maxCoreVersion;
+    }
+
+    public String getMinMinecraftVersion() {
+        return minMinecraftVersion;
+    }
+
+    public String getMaxMinecraftVersion() {
+        return maxMinecraftVersion;
     }
 
     public List<DependencyRule> getPluginDependencies() {
@@ -171,12 +186,6 @@ public final class WonderManifest {
             return none;
         }
 
-        /**
-         * Evaluates this rule using the given presence checker, which reports whether a
-         * given entry (a plugin name, class name, expansion id, etc.) is currently present.
-         *
-         * <p>Rules with no {@code any}/{@code all}/{@code none} entries are trivially satisfied.
-         */
         public boolean isSatisfiedBy(java.util.function.Predicate<String> presence) {
             if (!all.isEmpty()) {
                 for (String entry : all) {
@@ -210,9 +219,6 @@ public final class WonderManifest {
             return true;
         }
 
-        /**
-         * Human-readable description of this rule's conditions, for logging purposes.
-         */
         public String describe() {
             List<String> parts = new ArrayList<>();
             if (!all.isEmpty()) {

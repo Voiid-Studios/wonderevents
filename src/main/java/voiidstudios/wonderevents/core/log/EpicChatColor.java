@@ -32,7 +32,6 @@ public enum EpicChatColor {
         this.toString = new String(new char[]{COLOR_CHAR, code});
     }
 
-    @Override
     public String toString() {
         return toString;
     }

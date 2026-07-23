@@ -1,15 +1,7 @@
 package voiidstudios.wonderevents.core.manifest;
 
-/**
- * Tiny version helper that compares dotted numeric versions.
- *
- * <p>It ignores everything after a {@code +} suffix so a version such as
- * {@code 26.06.3+indevABCD} is treated as {@code 26.06.3}.
- */
 public final class VersionUtil {
-
-    private VersionUtil() {
-    }
+    private VersionUtil() {}
 
     public static String normalize(String version) {
         if (version == null) {
@@ -25,6 +17,10 @@ public final class VersionUtil {
 
     public static boolean isAtLeast(String currentVersion, String minimumVersion) {
         return compare(normalize(currentVersion), normalize(minimumVersion)) >= 0;
+    }
+
+    public static boolean isAtMost(String currentVersion, String maximumVersion) {
+        return compare(normalize(currentVersion), normalize(maximumVersion)) <= 0;
     }
 
     public static int compare(String left, String right) {
