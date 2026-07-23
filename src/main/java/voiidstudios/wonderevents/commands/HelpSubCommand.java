@@ -29,7 +29,7 @@ public final class HelpSubCommand implements WEACommand {
 
         Map<String, String> header = new HashMap<>();
         header.put("%VERSION%", context.getPlugin().getDescription().getVersion());
-        messages.send(sender, "command.help.header", header);
+        messages.sendPrefixed(sender, "command.help.header", header);
         messages.sendList(sender, "command.help.lines", null);
 
         return true;

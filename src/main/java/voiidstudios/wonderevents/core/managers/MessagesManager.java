@@ -3,6 +3,7 @@ package voiidstudios.wonderevents.core.managers;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import voiidstudios.wonderevents.commands.interfaces.BukkitCmdSender;
 import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.utils.TextUtils;
 
@@ -46,10 +47,16 @@ public final class MessagesManager {
     }
 
     public void send(CommandSender sender, String key, Map<String, String> placeholders) {
-        if (sender == null) {
-            return;
-        }
         sender.sendMessage(get(key, placeholders));
+    }
+
+    public void sendPrefixed(CommandSender sender, String key) {
+        sendPrefixed(sender, key, null);
+    }
+
+    public void sendPrefixed(CommandSender sender, String key, Map<String, String> placeholders) {
+        String msg = get(key, placeholders);
+        new BukkitCmdSender(sender).sendPrefixedMsg(msg);
     }
 
     public void sendList(CommandSender sender, String key, Map<String, String> placeholders) {

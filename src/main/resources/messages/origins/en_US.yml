@@ -7,7 +7,7 @@ command:
     header: "&7Running &dWonderEvents &b%VERSION%"
     lines:
       - "&5> &3/wonder help &7- Shows this message."
-      - "&5> &3/wonder reload &b<all|configs|expansions|addons> &7- Reload configs, expansions & addons"
+      - "&5> &3/wonder reload &b<all|configs|expansions|addons> &7- Reload configs, expansions and addons"
       - "&5> &3/wonder addons enable &b<id> &7- Enable a addon"
       - "&5> &3/wonder addons disable &b<id> &7- Disable a addon"
       - "&5> &3/wonder addons list &7- List all active addons"
@@ -19,8 +19,8 @@ command:
     process: "&7Reloading..."
     success_config: "&aConfig reloaded"
     success_messages: "&aMessages reloaded"
-    success_expansions: "&aExpansions reloaded: &d%EXPANSIONS%"
-    success_addons: "&aAddons reloaded: &d%ADDONS%"
+    success_expansions: "&aExpansions reloaded: %EXPANSIONS%"
+    success_addons: "&aAddons reloaded: %ADDONS%"
     done: "&aReloaded in &f%MS%ms"
 
   addons:

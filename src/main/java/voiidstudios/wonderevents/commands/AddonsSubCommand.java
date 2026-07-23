@@ -73,7 +73,7 @@ public final class AddonsSubCommand implements WEACommand {
 
     private boolean handleEnable(CommandSender sender, String[] args, MessagesManager messages) {
         if (args.length < 2) {
-            messages.send(sender, "command.addons.enable.usage");
+            messages.sendPrefixed(sender, "command.addons.enable.usage");
             return true;
         }
 
@@ -88,13 +88,13 @@ public final class AddonsSubCommand implements WEACommand {
 
         switch (result) {
             case NOT_FOUND:
-                messages.send(sender, "command.addons.enable.not_found", placeholders);
+                messages.sendPrefixed(sender, "command.addons.enable.not_found", placeholders);
                 break;
             case ALREADY:
-                messages.send(sender, "command.addons.enable.already", placeholders);
+                messages.sendPrefixed(sender, "command.addons.enable.already", placeholders);
                 break;
             case SUCCESS:
-                messages.send(sender, "command.addons.enable.success", placeholders);
+                messages.sendPrefixed(sender, "command.addons.enable.success", placeholders);
                 break;
         }
         return true;
@@ -102,7 +102,7 @@ public final class AddonsSubCommand implements WEACommand {
 
     private boolean handleDisable(CommandSender sender, String[] args, MessagesManager messages) {
         if (args.length < 2) {
-            messages.send(sender, "command.addons.disable.usage");
+            messages.sendPrefixed(sender, "command.addons.disable.usage");
             return true;
         }
 
@@ -117,13 +117,13 @@ public final class AddonsSubCommand implements WEACommand {
 
         switch (result) {
             case NOT_FOUND:
-                messages.send(sender, "command.addons.disable.not_found", placeholders);
+                messages.sendPrefixed(sender, "command.addons.disable.not_found", placeholders);
                 break;
             case ALREADY:
-                messages.send(sender, "command.addons.disable.already", placeholders);
+                messages.sendPrefixed(sender, "command.addons.disable.already", placeholders);
                 break;
             case SUCCESS:
-                messages.send(sender, "command.addons.disable.success", placeholders);
+                messages.sendPrefixed(sender, "command.addons.disable.success", placeholders);
                 break;
         }
         return true;
@@ -142,7 +142,7 @@ public final class AddonsSubCommand implements WEACommand {
 
         Map<String, String> titlePlaceholders = new HashMap<>();
         titlePlaceholders.put("%ADDONS%", String.valueOf(descriptors.size()));
-        messages.send(sender, "command.addons.list.title", titlePlaceholders);
+        messages.sendPrefixed(sender, "command.addons.list.title", titlePlaceholders);
 
         String separator = messages.get("command.addons.list.separator");
         String enabledColor = messages.get("command.addons.list.enabled");

@@ -123,7 +123,7 @@ public final class WEBootstrap extends JavaPlugin {
 
         long start = System.nanoTime();
         var messages = context.getMessagesManager();
-        messages.send(sender, "command.reload.process");
+        messages.sendPrefixed(sender, "command.reload.process");
 
         boolean reloadConfigs = scope == ReloadScope.ALL || scope == ReloadScope.CONFIGS;
         boolean reloadExpansions = scope == ReloadScope.ALL || scope == ReloadScope.EXPANSIONS;
@@ -135,8 +135,8 @@ public final class WEBootstrap extends JavaPlugin {
 
             Map<String, String> reloadPlaceholders = new java.util.HashMap<>();
             reloadPlaceholders.put("%CONFIG%", context.getConfigManager().getConfigFile().getName());
-            messages.send(sender, "command.reload.success_config", reloadPlaceholders);
-            messages.send(sender, "command.reload.success_messages");
+            messages.sendPrefixed(sender, "command.reload.success_config", reloadPlaceholders);
+            messages.sendPrefixed(sender, "command.reload.success_messages");
         }
 
         if (reloadExpansions && expansionManager != null) {
@@ -144,7 +144,7 @@ public final class WEBootstrap extends JavaPlugin {
 
             Map<String, String> expPlaceholders = new java.util.HashMap<>();
             expPlaceholders.put("%EXPANSIONS%", String.valueOf(loadedExpansions));
-            messages.send(sender, "command.reload.success_expansions", expPlaceholders);
+            messages.sendPrefixed(sender, "command.reload.success_expansions", expPlaceholders);
         }
 
         if (reloadAddons && addonManager != null) {
@@ -160,12 +160,12 @@ public final class WEBootstrap extends JavaPlugin {
 
             Map<String, String> addonPlaceholders = new java.util.HashMap<>();
             addonPlaceholders.put("%ADDONS%", String.valueOf(loadedAddons));
-            messages.send(sender, "command.reload.success_addons", addonPlaceholders);
+            messages.sendPrefixed(sender, "command.reload.success_addons", addonPlaceholders);
         }
 
         Map<String, String> donePlaceholders = new java.util.HashMap<>();
         donePlaceholders.put("%MS%", String.valueOf(elapsedMs(start)));
-        messages.send(sender, "command.reload.done", donePlaceholders);
+        messages.sendPrefixed(sender, "command.reload.done", donePlaceholders);
     }
 
     private void registerMainCommand() {

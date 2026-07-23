@@ -73,7 +73,7 @@ public final class ExpansionsSubCommand implements WEACommand {
 
     private boolean handleEnable(CommandSender sender, String[] args, MessagesManager messages) {
         if (args.length < 2) {
-            messages.send(sender, "command.expansions.enable.usage");
+            messages.sendPrefixed(sender, "command.expansions.enable.usage");
             return true;
         }
 
@@ -88,13 +88,13 @@ public final class ExpansionsSubCommand implements WEACommand {
 
         switch (result) {
             case NOT_FOUND:
-                messages.send(sender, "command.expansions.enable.not_found", placeholders);
+                messages.sendPrefixed(sender, "command.expansions.enable.not_found", placeholders);
                 break;
             case ALREADY:
-                messages.send(sender, "command.expansions.enable.already", placeholders);
+                messages.sendPrefixed(sender, "command.expansions.enable.already", placeholders);
                 break;
             case SUCCESS:
-                messages.send(sender, "command.expansions.enable.success", placeholders);
+                messages.sendPrefixed(sender, "command.expansions.enable.success", placeholders);
                 break;
         }
         return true;
@@ -102,7 +102,7 @@ public final class ExpansionsSubCommand implements WEACommand {
 
     private boolean handleDisable(CommandSender sender, String[] args, MessagesManager messages) {
         if (args.length < 2) {
-            messages.send(sender, "command.expansions.disable.usage");
+            messages.sendPrefixed(sender, "command.expansions.disable.usage");
             return true;
         }
 
@@ -117,13 +117,13 @@ public final class ExpansionsSubCommand implements WEACommand {
 
         switch (result) {
             case NOT_FOUND:
-                messages.send(sender, "command.expansions.disable.not_found", placeholders);
+                messages.sendPrefixed(sender, "command.expansions.disable.not_found", placeholders);
                 break;
             case ALREADY:
-                messages.send(sender, "command.expansions.disable.already", placeholders);
+                messages.sendPrefixed(sender, "command.expansions.disable.already", placeholders);
                 break;
             case SUCCESS:
-                messages.send(sender, "command.expansions.disable.success", placeholders);
+                messages.sendPrefixed(sender, "command.expansions.disable.success", placeholders);
                 break;
         }
         return true;
@@ -142,7 +142,7 @@ public final class ExpansionsSubCommand implements WEACommand {
 
         Map<String, String> titlePlaceholders = new HashMap<>();
         titlePlaceholders.put("%EXPANSIONS%", String.valueOf(descriptors.size()));
-        messages.send(sender, "command.expansions.list.title", titlePlaceholders);
+        messages.sendPrefixed(sender, "command.expansions.list.title", titlePlaceholders);
 
         String separator = messages.get("command.expansions.list.separator");
         String enabledColor = messages.get("command.expansions.list.enabled");

@@ -10,4 +10,4 @@ commands:
     description: WonderEvents administration command
     usage: /wonderevents <subcommand>
     aliases:
-      - we
+      - wonder
