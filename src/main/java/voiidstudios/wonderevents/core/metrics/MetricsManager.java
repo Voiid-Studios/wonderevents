@@ -17,10 +17,6 @@ import java.util.function.Function;
 public final class MetricsManager {
     private static final String PROJECT_TOKEN = "ead0df10ff128bd5370f44d02521e473";
 
-    // contextAware(): also passively catches uncaught errors thrown from the
-    // main plugin classloader. Addons/expansions run in their own classloader,
-    // so their errors must be reported manually via trackError() wherever
-    // they're caught (loaders/managers already catch Throwable there).
     private static final ErrorTracker ERROR_TRACKER = ErrorTracker.contextAware()
             .ignoreError(ClassNotFoundException.class);
 
