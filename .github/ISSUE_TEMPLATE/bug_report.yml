@@ -55,9 +55,9 @@ body:
     id: server_version
     attributes:
       label: Server version
-      description: "run `/version` command and paste it here"
+      description: "Run `/version` command and paste it here"
       placeholder: |
-        Run `/version` command and paste it here
+        Run `/version` command and paste it here.
 
         Example:
         This server is running Paper version git-Paper-788 (MC: 1.21.4) (Implementing API version 1.21.4-R0.1-SNAPSHOT)
@@ -67,8 +67,9 @@ body:
     id: plugin_version
     attributes:
       label: WonderEvents Version
-      description: "Execute `/wonder help` (or `/version WonderEvents`) and paste the version output here."
+      description: "Run `/wonder help` (or `/version WonderEvents`) command and paste the version output here."
       placeholder: |
+        Run `/wonder help` (or `/version WonderEvents`) command and paste the version output here.
         DO NOT PUT "LATEST". DOING SO WILL GET YOUR ISSUE CLOSED!
 
         Example:
@@ -81,9 +82,7 @@ body:
       label: Installed Expansions/Addons
       description: "List any WonderEvents Expansions or Addons you have installed, with their versions. If none, write 'None'."
       placeholder: |
-        Example:
-        - SomeExpansion v1.0.0
-        - SomeAddon v1.1.0
+        SomeExpansion v1.0.0, SomeAddon v1.1.0, (...)
     validations:
       required: true
   - type: input
