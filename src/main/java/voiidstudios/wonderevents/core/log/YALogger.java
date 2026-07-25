@@ -17,7 +17,7 @@ public class YALogger {
     }
 
     public YALogger withName(String name) {
-        YALogger named = new YALogger(logger, color, "[" + name + "] ");
+        YALogger named = new YALogger(logger, color, "(" + name + ") ");
         named.debug = this.debug;
         return named;
     }

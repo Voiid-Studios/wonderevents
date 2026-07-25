@@ -44,7 +44,6 @@ public final class WonderExpansionManager {
 
         File[] jars = folder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
         if (jars == null || jars.length == 0) {
-            logger.passiveInfo("[Expansions] §9Where did they go? I haven't found them in /expansions...");
             return 0;
         }
 

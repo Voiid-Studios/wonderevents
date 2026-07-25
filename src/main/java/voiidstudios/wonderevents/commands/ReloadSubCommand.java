@@ -5,6 +5,7 @@ import org.bukkit.command.CommandSender;
 import voiidstudios.wonderevents.WEBootstrap;
 import voiidstudios.wonderevents.api.WEACommand;
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.core.managers.MessagesManager;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,9 +29,10 @@ public final class ReloadSubCommand implements WEACommand {
 
     public boolean execute(CommandSender sender, String[] args) {
         WEBootstrap plugin = context.getPlugin();
+        MessagesManager messages = context.getMessagesManager();
 
         if (args.length == 0) {
-            plugin.reloadWonderEvents(sender, WEBootstrap.ReloadScope.ALL);
+            messages.sendPrefixed(sender, "command.reload.usage", null);
             return true;
         }
 
@@ -44,7 +46,8 @@ public final class ReloadSubCommand implements WEACommand {
         };
 
         if (scope == null) {
-            return false;
+            messages.sendPrefixed(sender, "command.reload.usage", null);
+            return true;
         }
 
         plugin.reloadWonderEvents(sender, scope);

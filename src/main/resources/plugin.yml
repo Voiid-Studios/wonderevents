@@ -1,13 +1,74 @@
 name: WonderEvents
-version: ${project.version}
 main: voiidstudios.wonderevents.WEBootstrap
 api-version: '1.16'
+
+version: ${project.version}
 authors:
   - Voiid Studios
-description: WonderEvents Core
+
 commands:
   wonderevents:
-    description: WonderEvents administration command
-    usage: /wonderevents <subcommand>
-    aliases:
-      - wonder
+    description: WonderEvents Command
+    aliases: 
+      - "wonder"
+
+permissions:
+  wonderevents.*:
+    description: 'Ability to use all WonderEvents commands'
+    children:
+      wonderevents.admin: true
+      wonderevents.addons.*: true
+      wonderevents.expansions.*: true
+  wonderevents.admin:
+    description: "Ability to use all WonderEvents commands"
+    children:
+      wonderevents.help: true
+      wonderevents.reload: true
+      wonderevents.updatenotify: true
+  wonderevents.addons.*:
+    description: "Ability to use all WonderEvents Addons commands"
+    children:
+      wonderevents.addons: true
+      wonderevents.addons.enable: true
+      wonderevents.addons.disable: true
+      wonderevents.addons.list: true
+  wonderevents.expansions.*:
+    description: "Ability to use all WonderEvents Expansions commands"
+    children:
+      wonderevents.expansions: true
+      wonderevents.expansions.enable: true
+      wonderevents.expansions.disable: true
+      wonderevents.expansions.list: true
+  wonderevents.help:
+    default: op
+    description: 'Allows you to view the list of WonderEvents commands'
+  wonderevents.reload:
+    default: op
+    description: 'Allows you to reload WonderEvents'
+  wonderevents.addons:
+    default: op
+    description: 'Allows you to access WonderEvents Addons'
+  wonderevents.expansions:
+    default: op
+    description: 'Allows you to access WonderEvents Expansions'
+  wonderevents.updatenotify:
+    default: "op"
+    description: "Notifies you when there is a WonderEvents update"
+  wonderevents.addons.enable:
+    default: op
+    description: 'Allows you to enable a WonderEvents Addon'
+  wonderevents.addons.disable:
+    default: op
+    description: 'Allows you to disable a WonderEvents Addon'
+  wonderevents.addons.list:
+    default: op
+    description: 'Allows you to list WonderEvents Addons'
+  wonderevents.expansions.enable:
+    default: op
+    description: 'Allows you to enable a WonderEvents Expansion'
+  wonderevents.expansions.disable:
+    default: op
+    description: 'Allows you to disable a WonderEvents Expansion'
+  wonderevents.expansions.list:
+    default: op
+    description: 'Allows you to list WonderEvents Expansions'

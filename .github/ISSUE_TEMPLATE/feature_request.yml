@@ -1,0 +1,49 @@
+name: Feature request
+description: Suggest an idea for this project
+labels: ["type: feature request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This tracker is only for WonderEvents itself.** If your suggestion is about an Addon or Expansion, report it to that addon's/expansion's own owner/repo instead.
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Terms
+      options:
+        - label: "I'm using the very latest version of WonderEvents (In other words: ![GitHub Release](https://img.shields.io/github/v/release/Voiid-Studios/wonderevents))"
+          required: true
+        - label: "This suggestion is about WonderEvents itself, not an Addon or Expansion."
+          required: true
+        - label: I already searched on the [Issue Tracker](../issues) to know if this feature was already suggested or discussed.
+          required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: "Describe the solution you'd like"
+      placeholder: "A clear and concise description of what you want to happen."
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Is your feature request related to a problem?
+      placeholder: "A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]"
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "Describe alternatives you've considered"
+      placeholder: "A clear and concise description of any alternative solutions or features you've considered."
+    validations:
+      required: false
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      placeholder: "Add any other context, mockups or screenshots about the feature request here."
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for taking the time to fill out this suggestion page!

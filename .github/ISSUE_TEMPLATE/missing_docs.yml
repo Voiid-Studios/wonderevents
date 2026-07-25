@@ -1,0 +1,62 @@
+name: Missing Documentation
+description: Report something that's missing, outdated or unclear in the docs/wiki
+labels: ["type: documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This tracker is only for WonderEvents itself.** If the missing docs are about an Addon or Expansion, report it to that addon's/expansion's own owner/repo instead.
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Terms
+      options:
+        - label: "I'm using the very latest version of WonderEvents (In other words: ![GitHub Release](https://img.shields.io/github/v/release/Voiid-Studios/wonderevents))"
+          required: true
+        - label: "This is about WonderEvents itself, not an Addon or Expansion."
+          required: true
+        - label: I already searched on the [Issue Tracker](../issues) to check if this was already reported.
+          required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: What's the issue with the documentation?
+      options:
+        - "Missing (not documented at all)"
+        - "Outdated (docs don't match current behavior)"
+        - "Unclear / confusing"
+        - "Incorrect"
+    validations:
+      required: true
+  - type: input
+    id: location
+    attributes:
+      label: Where is (or should be) this documented?
+      description: "Link to the page/section, or tell us where you looked and expected to find it."
+      placeholder: "ex. wiki page for /wonder addons, or config.yml reference"
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: What's missing or wrong?
+      description: A clear and concise description of what should be documented, corrected or clarified.
+      placeholder: "Example: the wiki doesn't explain what the 'faststats_metrics' option in config.yml does"
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested content (optional)
+      description: "If you already know what it should say, feel free to write it here — it makes this way faster for us."
+    validations:
+      required: false
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: "Additional context"
+      placeholder: "Add any other context or screenshots here."
+  - type: markdown
+    attributes:
+      value: |
+        ## Thanks for helping us keep the docs up to date!

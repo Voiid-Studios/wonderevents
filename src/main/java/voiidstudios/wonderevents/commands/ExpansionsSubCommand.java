@@ -135,14 +135,14 @@ public final class ExpansionsSubCommand implements WEACommand {
                 ? Collections.emptyList()
                 : manager.getLoadedDescriptors();
 
+        Map<String, String> titlePlaceholders = new HashMap<>();
+        titlePlaceholders.put("%EXPANSIONS%", String.valueOf(descriptors.size()));
+        messages.sendPrefixed(sender, "command.expansions.list.title", titlePlaceholders);
+
         if (descriptors.isEmpty()) {
             messages.send(sender, "command.expansions.list.empty");
             return true;
         }
-
-        Map<String, String> titlePlaceholders = new HashMap<>();
-        titlePlaceholders.put("%EXPANSIONS%", String.valueOf(descriptors.size()));
-        messages.sendPrefixed(sender, "command.expansions.list.title", titlePlaceholders);
 
         String separator = messages.get("command.expansions.list.separator");
         String enabledColor = messages.get("command.expansions.list.enabled");
@@ -164,7 +164,7 @@ public final class ExpansionsSubCommand implements WEACommand {
             }
         }
 
-        sender.sendMessage(line.toString());
+        sender.sendMessage(" &8-&r " + line.toString());
         return true;
     }
 

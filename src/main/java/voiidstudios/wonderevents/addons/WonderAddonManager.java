@@ -39,7 +39,6 @@ public final class WonderAddonManager {
 
         File[] jars = addonsFolder.listFiles(f -> f.isFile() && f.getName().endsWith(".jar"));
         if (jars == null || jars.length == 0) {
-            logger.passiveInfo("[Addons] §9Hmm, it's so quiet... there's no one on /addons...");
             return 0;
         }
 

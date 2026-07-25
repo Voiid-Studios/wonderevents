@@ -5,7 +5,7 @@
 
     <groupId>voiidstudios.wonderevents</groupId>
     <artifactId>WonderEvents</artifactId>
-    <version>0.0.12+indevK</version>
+    <version>0.0.13+indev</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -115,6 +115,10 @@
                                 <relocation>
                                     <pattern>net.kyori.examination</pattern>
                                     <shadedPattern>voiidstudios.wonderevents.libs.examination</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>net.kyori.option</pattern>
+                                    <shadedPattern>voiidstudios.wonderevents.libs.option</shadedPattern>
                                 </relocation>
                             </relocations>
                         </configuration>

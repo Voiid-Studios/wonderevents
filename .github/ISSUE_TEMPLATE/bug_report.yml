@@ -1,0 +1,125 @@
+name: Bug Report
+description: File a bug report
+labels: ["type: bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## READ AND FOLLOW THE DESCRIPTIONS OF THIS ISSUE TEMPLATE!
+        Not doing so may result in your issue being closed without warning. Take your time and properly fill out everything as requested.
+
+        **This tracker is only for bugs in WonderEvents.** If your issue is about an Addon or Expansion (behavior, config, missing features, etc.), report it to that addon's/expansion's own owner/repo instead. Issues about third-party addons/expansions will be closed.
+  - type: checkboxes
+    id: searched
+    attributes:
+      label: Terms
+      options:
+        - label: "I'm using the very latest version of WonderEvents (In other words: ![GitHub Release](https://img.shields.io/github/v/release/Voiid-Studios/wonderevents))"
+          required: true
+        - label: "This bug is caused by WonderEvents itself, not by an Addon or Expansion."
+          required: true
+        - label: "I am sure this is a bug and it is not caused by a misconfiguration."
+          required: true
+        - label: "I've looked for already existing issues on the [Issue Tracker](../issues) and haven't found any."
+          required: true
+        - label: "I tested that this issue persists on a bare-minimum server, without other plugins that could be interfering."
+          required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear and concise description of what the bug is.
+      placeholder: "Example: WE Adventure doesn't work with the rainbow pattern (<rainbow></rainbow>)"
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce the issue
+      description: Describe how to reproduce the issue step by step
+      placeholder: |
+        1. Go to (...)
+        2. Run command (...)
+        3. Wait for (...)
+        4. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+  - type: textarea
+    id: server_version
+    attributes:
+      label: Server version
+      description: "run `/version` command and paste it here"
+      placeholder: |
+        Run `/version` command and paste it here
+
+        Example:
+        This server is running Paper version git-Paper-788 (MC: 1.21.4) (Implementing API version 1.21.4-R0.1-SNAPSHOT)
+    validations:
+      required: true
+  - type: textarea
+    id: plugin_version
+    attributes:
+      label: WonderEvents Version
+      description: "Execute `/wonder help` (or `/version WonderEvents`) and paste the version output here."
+      placeholder: |
+        DO NOT PUT "LATEST". DOING SO WILL GET YOUR ISSUE CLOSED!
+
+        Example:
+        Running WonderEvents 26.07.0
+    validations:
+      required: true
+  - type: textarea
+    id: exad
+    attributes:
+      label: Installed Expansions/Addons
+      description: "List any WonderEvents Expansions or Addons you have installed, with their versions. If none, write 'None'."
+      placeholder: |
+        Example:
+        - SomeExpansion v1.0.0
+        - SomeAddon v1.1.0
+    validations:
+      required: true
+  - type: input
+    id: full_server_log
+    attributes:
+      label: Full Server Log
+      description: |-
+        Upload your **complete latest.log** file to [mclo.gs](https://mclo.gs) and provide the generated link here.
+        Don't skip this even if there's no visible error. Ignoring this can get your issue closed!
+      placeholder: "https://mclo.gs/..."
+    validations:
+      required: true
+  - type: textarea
+    id: errors
+    attributes:
+      label: Error (optional)
+      description: "Paste any relevant errors/stacktraces here. Text pasted here will be formatted as code."
+      render: shell
+      placeholder: |
+        [19:26:04] [Server thread/ERROR]: [WonderEvents] ...
+  - type: textarea
+    id: configuration_files
+    attributes:
+      label: Relevant configuration (config.yml, messages, etc.)
+      description: "Paste the relevant part of your config.yml or message files that relate to this bug. Code pasted here will be formatted as YAML."
+      render: yaml
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots/Videos (you can drag and drop files or paste links)
+      description: "If applicable, add screenshots or a short clip to help explain your problem."
+  - type: markdown
+    attributes:
+      value: |
+        ## Final Notes
+        Support is provided "as is" without any guarantee of accuracy, success or similar.
+
+        The Voiid Studios Team is under no obligation to respond to your issue, and your issue may be closed at any time without notice.
+        We reserve the right to refuse to provide support for any reason.

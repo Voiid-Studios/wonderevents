@@ -46,13 +46,17 @@ public final class WEBootstrap extends JavaPlugin {
 
         yaLogger.process("Getting everything ready for you...");
 
+        if (Boolean.getBoolean(WE_LOADED_PROPERTY)) {
+            sendConsoleReloadWarning();
+        } else {
+            System.setProperty(WE_LOADED_PROPERTY, "true");
+        }
+
         context = new PluginContext(this);
         metricsManager = new MetricsManager(context);
         expansionManager = new WonderExpansionManager(context);
         addonManager = new WonderAddonManager(context);
         mainCommandManager = new MainCommandManager(context);
-
-        yaLogger.process("Connecting the satellites...");
 
         context.setMetricsManager(metricsManager);
         context.setExpansionManager(expansionManager);
@@ -60,25 +64,44 @@ public final class WEBootstrap extends JavaPlugin {
 
         yaLogger.process("Looking for commands...");
 
-        long commandsStart = System.nanoTime();
+        long cmdsStart = System.nanoTime();
         context.getCommandManager().loadCoreCommands();
         registerMainCommand();
-        long commandsMs = elapsedMs(commandsStart);
+        long cmdsMs = elapsedMs(cmdsStart);
 
-        int commandsCount = context.getCommandManager().getLoadedCommandCount();
-        yaLogger.success("§bRegistered " + commandsCount + " commands. They're all ears! §7(" + commandsMs + "ms)");
+        int cmdsCount = context.getCommandManager().getLoadedCommandCount();
+        yaLogger.success("§bRegistered " + cmdsCount + " commands. They're all ears! §7(" + cmdsMs + "ms)");
 
         yaLogger.process("Looking for expansions...");
 
+        long exStart = System.nanoTime();
         expansionManager.loadExpansions();
         expansionManager.enableExpansions();
+        long exMs = elapsedMs(exStart);
+
+        int exCount = expansionManager.getLoadedCount();
+        if (exCount > 0) {
+            yaLogger.success("§bLoaded " + exCount + " expansions. They're ready for action! §7(" + exMs + "ms)");
+        } else {
+            yaLogger.passiveInfo("[Expansions] §9Where did they go? I haven't found them in /expansions...");
+        }
 
         yaLogger.process("Looking for addons...");
 
+        long adStart = System.nanoTime();
         addonManager.loadAddons();
         addonManager.enableAddons();
+        long adMs = elapsedMs(adStart);
+
+        int adCount = addonManager.getLoadedCount();
+        if (adCount > 0) {
+            yaLogger.success("§bLoaded " + adCount + " addons. They're ready for action! §7(" + adMs + "ms)");
+        } else {
+            yaLogger.passiveInfo("[Addons] §9Hmm, it's so quiet... there's no one on /addons...");
+        }
 
         if (context.getConfigManager().isMetricsEnabled()) {
+            yaLogger.process("Connecting the satellites...");
             metricsManager.start();
         }
 
@@ -215,6 +238,43 @@ public final class WEBootstrap extends JavaPlugin {
                 .build();
 
         box.forEach(yaLogger::info);
+    }
+
+    private void sendConsoleReloadWarning() {
+        final String[] RELOAD_PREFIXES = {
+            "WHAT ARE YOU DOING?!",
+            "OH HELL NO.",
+            "...seriously?",
+            "bro.",
+            "nope. nope. nope.",
+            "have you tried NOT doing that?",
+            "the council does not approve.",
+            "skill issue.",
+            "i am so tired of you.",
+            "do you feel powerful? does this make you feel powerful?",
+            "i will not stand for this.",
+            "i will not tolerate such ingratitude.",
+            "i love you very much, but this time you've really gone too far."
+        };
+
+        String prefix = RELOAD_PREFIXES[ThreadLocalRandom.current().nextInt(RELOAD_PREFIXES.length)];
+
+        List<String> box = ConsoleBox.builder()
+                .title("⚠ " + prefix + " ⚠")
+                .line("Server reload detected by WonderEvents.")
+                .line("This usually happens when you use /bukkit:reload, PlugMan, or similar.")
+                .blank()
+                .line("This action IS NOT SUPPORTED and may cause SERIOUS PROBLEMS WITH YOUR")
+                .line("EXPANSIONS AND ADD-ONS!!!")
+                .blank()
+                .line("YOU WILL GET NO SUPPORT FOR THE PLUGIN FOR ANY ISSUES YOU ENCOUNTER")
+                .line("AFTER THE SERVER RELOAD!")
+                .blank()
+                .line("More info: https://madelinemiller.dev/blog/problem-with-reload/")
+                .footer("#RestartYourServerAndNeverReloadIt")
+                .build();
+
+        box.forEach(yaLogger::warning);
     }
 
     public static String platformInfo(){

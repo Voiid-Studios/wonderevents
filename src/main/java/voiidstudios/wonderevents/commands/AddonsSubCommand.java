@@ -135,14 +135,14 @@ public final class AddonsSubCommand implements WEACommand {
                 ? Collections.emptyList()
                 : manager.getLoadedDescriptors();
 
+        Map<String, String> titlePlaceholders = new HashMap<>();
+        titlePlaceholders.put("%ADDONS%", String.valueOf(descriptors.size()));
+        messages.sendPrefixed(sender, "command.addons.list.title", titlePlaceholders);
+
         if (descriptors.isEmpty()) {
             messages.send(sender, "command.addons.list.empty");
             return true;
         }
-
-        Map<String, String> titlePlaceholders = new HashMap<>();
-        titlePlaceholders.put("%ADDONS%", String.valueOf(descriptors.size()));
-        messages.sendPrefixed(sender, "command.addons.list.title", titlePlaceholders);
 
         String separator = messages.get("command.addons.list.separator");
         String enabledColor = messages.get("command.addons.list.enabled");
@@ -164,7 +164,7 @@ public final class AddonsSubCommand implements WEACommand {
             }
         }
 
-        sender.sendMessage(line.toString());
+        sender.sendMessage(" &8-&r " + line.toString());
         return true;
     }
 

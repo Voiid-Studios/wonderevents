@@ -1,0 +1,30 @@
+name: Build WonderEvents
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  buildPlugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '25'
+
+      - name: Set download source
+        run: echo "GitHub (Actions)" > src/main/resources/download-source.txt
+
+      - name: Build Plugin
+        run: mvn -B clean package --file pom.xml
+
+      - name: Upload Plugin Jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: WonderEvents
+          path: target/*.jar

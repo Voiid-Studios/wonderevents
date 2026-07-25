@@ -16,6 +16,7 @@ command:
       - "&5> &3/wonder expansions list &7- List all active expansions"
 
   reload:
+    usage: "&cUse: /wonder reload <all|configs|expansions|addons>"
     process: "&7Reloading..."
     success_config: "&aConfig reloaded"
     success_messages: "&aMessages reloaded"
