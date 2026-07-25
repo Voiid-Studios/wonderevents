@@ -1,6 +1,10 @@
 Config:
   # Sends anonymous metrics to FastStats
   faststats_metrics: true
+  # The plugin will attempt to auto-update when it finds a new version.
+  auto_update: true
+  # The plugin will send an update notification when it finds a new version if auto-update is disabled.
+  update_notification: true
 
 Messages:
   # Default language file located in messages/origins/<language>.yml

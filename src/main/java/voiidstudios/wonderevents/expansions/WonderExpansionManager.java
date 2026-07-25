@@ -16,6 +16,7 @@ import voiidstudios.wonderevents.core.manifest.ServerVersionUtil;
 import voiidstudios.wonderevents.core.manifest.PlatformDependencyChecker;
 import voiidstudios.wonderevents.core.loader.FeatureClassLoader;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
+import voiidstudios.wonderevents.utils.BundledContentExtractor;
 
 import java.io.File;
 import java.net.URL;
@@ -594,6 +595,8 @@ public final class WonderExpansionManager {
         if (!folder.exists()) {
             folder.mkdirs();
         }
+
+        BundledContentExtractor.extract(context.getPlugin(), logger, "expansions", folder, "Expansions");
     }
 
     private void ensureExpansionFolder(WonderExpansionDescriptor descriptor) {

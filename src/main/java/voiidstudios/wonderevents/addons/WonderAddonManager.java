@@ -10,6 +10,7 @@ import voiidstudios.wonderevents.core.manifest.VersionUtil;
 import voiidstudios.wonderevents.core.manifest.ServerVersionUtil;
 import voiidstudios.wonderevents.core.manifest.PlatformDependencyChecker;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
+import voiidstudios.wonderevents.utils.BundledContentExtractor;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -553,6 +554,8 @@ public final class WonderAddonManager {
         if (!addonsFolder.exists()) {
             addonsFolder.mkdirs();
         }
+
+        BundledContentExtractor.extract(context.getPlugin(), logger, "addons", addonsFolder, "Addons");
     }
 
     private enum LoadDecision {

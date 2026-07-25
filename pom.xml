@@ -5,7 +5,7 @@
 
     <groupId>voiidstudios.wonderevents</groupId>
     <artifactId>WonderEvents</artifactId>
-    <version>26.07.0+rc1</version>
+    <version>26.07.0</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -89,6 +89,18 @@
             <resource>
                 <directory>src/main/resources</directory>
                 <filtering>true</filtering>
+                <excludes>
+                    <exclude>expansions/**</exclude>
+                    <exclude>addons/**</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>expansions/**</include>
+                    <include>addons/**</include>
+                </includes>
             </resource>
         </resources>
         <plugins>

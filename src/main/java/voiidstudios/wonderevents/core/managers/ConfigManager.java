@@ -56,6 +56,14 @@ public final class ConfigManager {
         return config.getBoolean("Config.faststats_metrics", true);
     }
 
+    public boolean isAutoUpdate() {
+        return config.getBoolean("Config.auto_update", true);
+    }
+
+    public boolean isUpdateNotification() {
+        return config.getBoolean("Config.update_notification", true);
+    }
+
     public String getLanguage() {
         return config.getString("Messages.language", "en_US");
     }

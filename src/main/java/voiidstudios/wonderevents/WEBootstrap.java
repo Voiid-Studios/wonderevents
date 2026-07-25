@@ -13,9 +13,14 @@ import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.core.managers.MainCommandManager;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
 import voiidstudios.wonderevents.expansions.WonderExpansionManager;
+import voiidstudios.wonderevents.listeners.UpdateNotifyListener;
+import voiidstudios.wonderevents.update.UpdateChecker;
+import voiidstudios.wonderevents.update.UpdateCheckerResult;
+import voiidstudios.wonderevents.update.UpdateDownloader;
 import voiidstudios.wonderevents.utils.DownloadSource;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
@@ -33,6 +38,11 @@ public final class WEBootstrap extends JavaPlugin {
     private WonderAddonManager addonManager;
     private MetricsManager metricsManager;
     private MainCommandManager mainCommandManager;
+
+    private UpdateChecker updateChecker;
+    private UpdateDownloader updateDownloader;
+    private volatile String foundNewVersion;
+    private boolean firstUpdateCheck = true;
 
     public void onEnable() {
         long pluginStart = System.nanoTime();
@@ -105,8 +115,53 @@ public final class WEBootstrap extends JavaPlugin {
             metricsManager.start();
         }
 
+        getServer().getPluginManager().registerEvents(new UpdateNotifyListener(this, context), this);
+
+        updateChecker = new UpdateChecker(version, yaLogger);
+        updateDownloader = new UpdateDownloader(yaLogger, updateChecker);
+
+        scheduleUpdateChecks();
+
         long totalMs = elapsedMs(pluginStart);
         yaLogger.success("§aAll set! WonderEvents is set up correctly §7(" + totalMs + "ms)");
+    }
+
+    private void scheduleUpdateChecks() {
+        Runnable checkTask = () -> {
+            if (firstUpdateCheck) {
+                yaLogger.process("Checking for updates...");
+                firstUpdateCheck = false;
+            } else {
+                yaLogger.process("Checking for updates again...");
+            }
+
+            checkUpdates(updateChecker.check());
+        };
+
+        if (isFolia()) {
+            try {
+                Object asyncScheduler = Bukkit.class.getMethod("getAsyncScheduler").invoke(null);
+                asyncScheduler.getClass()
+                        .getMethod("runAtFixedRate", org.bukkit.plugin.Plugin.class, java.util.function.Consumer.class,
+                                long.class, long.class, java.util.concurrent.TimeUnit.class)
+                        .invoke(asyncScheduler, this, (java.util.function.Consumer<Object>) task -> checkTask.run(),
+                                1L, 8L, java.util.concurrent.TimeUnit.HOURS);
+            } catch (Exception e) {
+                yaLogger.passiveWarning("Failed to schedule the update check on Folia: " + e.getMessage());
+            }
+            return;
+        }
+
+        getServer().getScheduler().runTaskTimerAsynchronously(this, checkTask, 0L, UPDATE_CHECK_INTERVAL);
+    }
+
+    private static boolean isFolia() {
+        try {
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
+            return true;
+        } catch (ClassNotFoundException e) {
+            return Bukkit.getServer().getName().equalsIgnoreCase("Folia");
+        }
     }
 
     public void onDisable() {
@@ -189,6 +244,101 @@ public final class WEBootstrap extends JavaPlugin {
         Map<String, String> donePlaceholders = new java.util.HashMap<>();
         donePlaceholders.put("%MS%", String.valueOf(elapsedMs(start)));
         messages.sendPrefixed(sender, "command.reload.done", donePlaceholders);
+    }
+
+    private void checkUpdates(UpdateCheckerResult result) {
+        if (result.isError()) {
+            yaLogger.passiveWarning("Failed to check for updates: " + result.getErrorMessage());
+            return;
+        }
+
+        String latest = result.getLatestVersion();
+        if (latest == null) {
+            return;
+        }
+
+        if (version.contains("+")) {
+            yaLogger.passiveSevere("Internal / testing version detected, skipping update check...");
+            return;
+        }
+
+        int comparison = compareVersions(version, latest);
+
+        if (comparison == 0) {
+            return;
+        }
+
+        if (comparison > 0) {
+            yaLogger.passiveQuestion("...wait, you're running a version newer than the latest stable release?");
+            yaLogger.passiveSevere("Either you're a time traveler, or something went very wrong. Skipping...");
+            return;
+        }
+
+        foundNewVersion = latest;
+
+        yaLogger.passiveInfo("Latest version found: §9v" + latest);
+        yaLogger.passiveInfo("Current version: §6v" + version);
+
+        List<String> box = ConsoleBox.builder()
+                .borderColor("§a")
+                .title("§a!!! NEW UPDATE AVAILABLE !!!")
+                .line("§aA newer version of WonderEvents is ready for you.")
+                .blank()
+                .line("§aLatest version: §f" + latest)
+                .line("§aCurrent version: §f" + version)
+                .blank()
+                .line("§aDownload it at:")
+                .line("§f" + UpdateChecker.RELEASES_PAGE_URL)
+                .build();
+
+        box.forEach(yaLogger::info);
+
+        if (context.getConfigManager().isUpdateNotification()) {
+            getServer().getScheduler().runTask(this, this::notifyOnlineNow);
+        }
+
+        if (context.getConfigManager().isAutoUpdate()) {
+            yaLogger.process("Auto-update enabled. §bDownloading " + latest + "...");
+            updateDownloader.downloadUpdate();
+        }
+    }
+
+    private void notifyOnlineNow() {
+        if (foundNewVersion == null) {
+            return;
+        }
+
+        Map<String, String> placeholders = new HashMap<>();
+        placeholders.put("%LATEST%", foundNewVersion);
+        placeholders.put("%CURRENT%", version);
+        placeholders.put("%UPDATELINK%", UpdateChecker.RELEASES_PAGE_URL);
+
+        for (org.bukkit.entity.Player player : getServer().getOnlinePlayers()) {
+            if (!player.hasPermission("wonderevents.updatenotify")) {
+                continue;
+            }
+            context.getMessagesManager().sendList(player, "system.update.available", placeholders);
+        }
+    }
+
+    private int compareVersions(String v1, String v2) {
+        try {
+            String[] parts1 = v1.split("[.+\\-]");
+            String[] parts2 = v2.split("[.+\\-]");
+            int len = Math.max(parts1.length, parts2.length);
+            for (int i = 0; i < len; i++) {
+                int a = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+                int b = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+                if (a != b) return a - b;
+            }
+            return 0;
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    public String getFoundNewVersion() {
+        return foundNewVersion;
     }
 
     private void registerMainCommand() {
@@ -386,5 +536,9 @@ public final class WEBootstrap extends JavaPlugin {
 
     public WEBootstrap getCore() {
         return this;
+    }
+
+    public java.io.File getPluginJarFile() {
+        return getFile();
     }
 }
