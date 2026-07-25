@@ -29,6 +29,12 @@ jobs:
       - name: Generate Javadoc
         run: mvn -B -e javadoc:javadoc --file pom.xml
 
+      - name: Debug target contents
+        if: always()
+        run: |
+          echo "--- target tree ---"
+          find target -maxdepth 6 2>/dev/null || echo "target/ does not exist at all"
+
       - name: Verify Javadoc output
         run: |
           if [ ! -d target/site/apidocs ] || [ -z "$(ls -A target/site/apidocs)" ]; then

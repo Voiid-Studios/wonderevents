@@ -115,6 +115,7 @@
                     <failOnError>true</failOnError>
                     <failOnWarnings>false</failOnWarnings>
                     <detectJavaApiLink>false</detectJavaApiLink>
+                    <legacyMode>true</legacyMode>
                 </configuration>
             </plugin>
             <plugin>
