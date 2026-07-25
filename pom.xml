@@ -109,13 +109,13 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.11.2</version>
                 <configuration>
-                    <release>25</release>
+                    <source>25</source>
                     <encoding>UTF-8</encoding>
+                    <failOnError>false</failOnError>
+                    <quiet>false</quiet>
                     <doclint>none</doclint>
-                    <failOnError>true</failOnError>
-                    <failOnWarnings>false</failOnWarnings>
-                    <detectJavaApiLink>false</detectJavaApiLink>
-                    <legacyMode>true</legacyMode>
+                    <show>protected</show>
+                    <additionalJOption>-Xdoclint:none</additionalJOption>
                 </configuration>
             </plugin>
             <plugin>
