@@ -27,4 +27,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: WonderEvents
-          path: target/*.jar
+          path: target/WonderEvents-*.jar
