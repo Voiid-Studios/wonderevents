@@ -27,7 +27,14 @@ jobs:
           java-version: '25'
 
       - name: Generate Javadoc
-        run: mvn -B javadoc:javadoc --file pom.xml
+        run: mvn -B -e javadoc:javadoc --file pom.xml
+
+      - name: Verify Javadoc output
+        run: |
+          if [ ! -d target/site/apidocs ] || [ -z "$(ls -A target/site/apidocs)" ]; then
+            echo "target/site/apidocs is missing or empty, check the Javadoc log above"
+            exit 1
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
