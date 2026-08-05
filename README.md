@@ -7,6 +7,7 @@ The best framework for expansions & addons! Everything in one place.
 
 [![Kofi](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/kofi-plural_vector.svg "Support us on Ko-fi")](https://ko-fi.com/maxxvoiid/donate)
 [![Modrinth](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg "Download on Modrinth")](https://modrinth.com/plugin/wonderevents)
+[![Hangar](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/hangar_vector.svg "Download on Hangar")](https://hangar.papermc.io/VoiidStudios/WonderEvents)
 
 [![VSPL](https://raw.githubusercontent.com/Voiid-Studios/voiidstudios/main/assets/buttons/vspl_license.svg "View the Voiid Studios Public License")](https://github.com/Voiid-Studios/voiidstudios/blob/main/LICENSE.md)
 [![GitHub](https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/available/github_vector.svg "View WE Source Code on GitHub")](https://github.com/Voiid-Studios/wonderevents)

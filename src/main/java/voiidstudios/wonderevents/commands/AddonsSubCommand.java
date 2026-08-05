@@ -164,7 +164,7 @@ public final class AddonsSubCommand implements WEACommand {
             }
         }
 
-        sender.sendMessage(" &8-&r " + line.toString());
+        sender.sendMessage(" - " + line.toString());
         return true;
     }
 
