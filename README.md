@@ -5,6 +5,7 @@
   <a href="https://modrinth.com/plugin/wonderevents"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/available/modrinth_vector.svg" alt="Download on Modrinth" style="margin: 5px 10px;"></a>
   <a href="https://hangar.papermc.io/VoiidStudios/WonderEvents"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy-minimal/available/hangar_vector.svg" alt="Download on Hangar" style="margin: 5px 10px;"></a>
   <br><a href="https://github.com/Voiid-Studios/voiidstudios/blob/main/LICENSE.md"><img src="https://voiid-studios.github.io/stuff/assets/buttons/vspl_license.svg" alt="View the Voiid Studios Public License" style="margin: 5px 10px;"></a>
+  <a href="https://github.com/Voiid-Studios/wonderevents/issues/new/choose"><img src="https://voiid-studios.github.io/stuff/assets/buttons/reportbugs_compact.svg" alt="Report Bugs on GitHub" style="margin: 5px 10px;"></a>
   <a href="https://github.com/Voiid-Studios/wonderevents"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/available/github_vector.svg" alt="View Source Code on GitHub" style="margin: 5px 10px;"></a>
 </p>
 
