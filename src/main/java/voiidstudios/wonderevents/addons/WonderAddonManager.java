@@ -551,11 +551,14 @@ public final class WonderAddonManager {
     }
 
     private void ensureAddonsFolder() {
-        if (!addonsFolder.exists()) {
+        boolean existed = addonsFolder.exists();
+        if (!existed) {
             addonsFolder.mkdirs();
         }
 
-        BundledContentExtractor.extract(context.getPlugin(), logger, "addons", addonsFolder, "Addons");
+        if (!existed) {
+            BundledContentExtractor.extract(context.getPlugin(), logger, "addons", addonsFolder, "Addons");
+        }
     }
 
     private enum LoadDecision {

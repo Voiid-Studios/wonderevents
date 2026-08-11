@@ -1,6 +1,8 @@
 src/main/resources/download-source.txt
+EXPORTED/
 wonderevents-proyect-*
 create-zip.ps1
+build-all.ps1
 
 target/
 dependency-reduced-pom.xml

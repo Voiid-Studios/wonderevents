@@ -592,11 +592,14 @@ public final class WonderExpansionManager {
     }
 
     private void ensureFolder() {
-        if (!folder.exists()) {
+        boolean existed = folder.exists();
+        if (!existed) {
             folder.mkdirs();
         }
 
-        BundledContentExtractor.extract(context.getPlugin(), logger, "expansions", folder, "Expansions");
+        if (!existed) {
+            BundledContentExtractor.extract(context.getPlugin(), logger, "expansions", folder, "Expansions");
+        }
     }
 
     private void ensureExpansionFolder(WonderExpansionDescriptor descriptor) {

@@ -35,8 +35,6 @@ public final class ConfigManager {
         if (!data.exists()) {
             data.mkdirs();
         }
-        new File(data, "expansions").mkdirs();
-        new File(data, "addons").mkdirs();
         new File(data, "messages").mkdirs();
         new File(data, "messages/custom").mkdirs();
         new File(data, "messages/origins").mkdirs();
