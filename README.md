@@ -1,4 +1,4 @@
-![WonderEvents Banner](https://voiid-studios.github.io/stuff/assets/proyect/we/banner.png)
+![WonderEvents Banner](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/banner.png)
 
 <p align="center" style="text-align: center;">
   <a href="https://ko-fi.com/maxxvoiid/donate"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/cozy/donate/kofi-plural_vector.svg" alt="Support us on Ko-fi" style="margin: 5px 10px;"></a>
@@ -10,7 +10,7 @@
   <a href="https://github.com/Voiid-Studios/wonderevents"><img src="https://cdn.jsdelivr.net/npm/@intergrav/devins-badges@3/assets/compact-minimal/available/github_vector.svg" alt="View Source Code on GitHub" style="margin: 5px 10px;"></a>
 </p>
 
-![Divider](https://voiid-studios.github.io/stuff/assets/proyect/we/divider.png)
+![Divider](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/divider.png)
 
 ## ❓ What is WonderEvents?
 
@@ -18,7 +18,7 @@ WonderEvents (WE) is the core framework behind Voiid Studios' Minecraft events p
 
 Expansions and addons are just `.jar` files dropped into their respective folders — WonderEvents discovers them, resolves their dependencies, and loads them automatically, no server restart juggling needed.
 
-![Divider](https://voiid-studios.github.io/stuff/assets/proyect/we/divider.png)
+![Divider](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/divider.png)
 
 ## ✨ Features
 
@@ -29,7 +29,7 @@ Expansions and addons are just `.jar` files dropped into their respective folder
 - 🎨 Adventure/MiniMessage-powered text formatting, with a YAML-driven multi-language message system
 - 🛠️ Simple developer API (`WEAPI`, `WEABootstrap`, `WEACommand`, `WEAListener`, `WEAModule`) for building your own expansions/addons on top of WE.
 
-![Divider](https://voiid-studios.github.io/stuff/assets/proyect/we/divider.png)
+![Divider](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/divider.png)
 
 ## 📋 Requirements
 
@@ -37,7 +37,7 @@ Expansions and addons are just `.jar` files dropped into their respective folder
 - **Server software:** Spigot, Paper or forks (CraftBukkit and Folia are NOT supported!)
 - No external dependencies required — everything WonderEvents needs ships bundled inside the plugin
 
-![Divider](https://voiid-studios.github.io/stuff/assets/proyect/we/divider.png)
+![Divider](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/divider.png)
 
 ## 🚀 Installation
 
@@ -46,7 +46,7 @@ Expansions and addons are just `.jar` files dropped into their respective folder
 3. Restart the server, WonderEvents is ready! ⚡
 4. (Optional) Drop any additional expansions/addons into `plugins/WonderEvents/expansions/` and `plugins/WonderEvents/addons/`
 
-![Divider](https://voiid-studios.github.io/stuff/assets/proyect/we/divider.png)
+![Divider](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/divider.png)
 
 ## 📖 How to use it
 
@@ -61,7 +61,7 @@ Expansions and addons are just `.jar` files dropped into their respective folder
   - `update_notification` — notify players with `wonderevents.updatenotify` (and console) when an update is available
   - `language` — pick the language file used from `messages/origins/`
 
-![Divider](https://voiid-studios.github.io/stuff/assets/proyect/we/divider.png)
+![Divider](https://voiid-studios.github.io/stuff/assets/proyect/WonderEvents/divider.png)
 
 ## 📚 WonderWiki VERY SOON!
 While we're working on WonderWiki, you can access the [JDocs](https://voiid-studios.github.io/wonderevents/)!
