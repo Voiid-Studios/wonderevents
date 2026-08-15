@@ -2,19 +2,22 @@ name: Deploy Javadoc
 
 on:
   push:
+    branches:
+      - '[0-9][0-9].[0-9][0-9]'
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
-  group: "pages"
+  group: "pages-hub-wonderevents"
   cancel-in-progress: false
 
+env:
+  PROJECT_NAME: wonderevents
+
 jobs:
-  build:
+  build-and-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -48,18 +51,82 @@ jobs:
             exit 1
           fi
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Generate pages-hub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
         with:
-          path: target/reports/apidocs
+          app-id: ${{ secrets.PAGES_HUB_APP_ID }}
+          private-key: ${{ secrets.PAGES_HUB_APP_PRIVATE_KEY }}
+          owner: Voiid-Studios
+          repositories: pages-hub
 
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Checkout pages-hub
+        uses: actions/checkout@v4
+        with:
+          repository: Voiid-Studios/pages-hub
+          token: ${{ steps.app-token.outputs.token }}
+          path: pages-hub
+
+      - name: Copy javadoc into pages-hub
+        run: |
+          DEST="pages-hub/jd/${PROJECT_NAME}/${GITHUB_REF_NAME}"
+          rm -rf "$DEST"
+          mkdir -p "$DEST"
+          cp -r target/reports/apidocs/. "$DEST/"
+
+      - name: Update "latest" redirect if this branch is newer
+        working-directory: pages-hub
+        run: |
+          BRANCH="${GITHUB_REF_NAME}"
+          FILE="_redirects"
+          touch "$FILE"
+
+          CURRENT_LATEST=$(grep -m1 "^/jd/${PROJECT_NAME} " "$FILE" | awk '{print $2}' | sed -E "s#/jd/${PROJECT_NAME}/([^/]+)/?#\1#") || true
+
+          NEW_MAJOR=$(echo "$BRANCH" | cut -d. -f1)
+          NEW_MINOR=$(echo "$BRANCH" | cut -d. -f2)
+
+          SHOULD_UPDATE=true
+          if [ -n "$CURRENT_LATEST" ]; then
+            CUR_MAJOR=$(echo "$CURRENT_LATEST" | cut -d. -f1)
+            CUR_MINOR=$(echo "$CURRENT_LATEST" | cut -d. -f2)
+            if [ "$NEW_MAJOR" -lt "$CUR_MAJOR" ] || { [ "$NEW_MAJOR" -eq "$CUR_MAJOR" ] && [ "$NEW_MINOR" -lt "$CUR_MINOR" ]; }; then
+              SHOULD_UPDATE=false
+            fi
+          fi
+
+          if [ "$SHOULD_UPDATE" = true ]; then
+            grep -v "^/jd/${PROJECT_NAME} \|^/jd/${PROJECT_NAME}/ " "$FILE" > "${FILE}.tmp" || true
+            mv "${FILE}.tmp" "$FILE"
+            {
+              echo "/jd/${PROJECT_NAME} /jd/${PROJECT_NAME}/${BRANCH}/ 302"
+              echo "/jd/${PROJECT_NAME}/ /jd/${PROJECT_NAME}/${BRANCH}/ 302"
+            } >> "$FILE"
+            echo "Latest version of ${PROJECT_NAME} updated to ${BRANCH}"
+          else
+            echo "${BRANCH} is older than ${CURRENT_LATEST}, not updating the latest redirect"
+          fi
+
+      - name: Commit and push to pages-hub
+        working-directory: pages-hub
+        run: |
+          git config user.name "pages-hub-writer[bot]"
+          git config user.email "pages-hub-writer[bot]@users.noreply.github.com"
+          git add "jd/${PROJECT_NAME}/${GITHUB_REF_NAME}" _redirects
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "docs(${PROJECT_NAME}): update javadoc for ${GITHUB_REF_NAME}"
+
+          for i in 1 2 3 4 5; do
+            if git push; then
+              exit 0
+            fi
+            echo "Push rejected (probably another deploy pushed first), retrying..."
+            git pull --rebase
+          done
+          echo "No changes pushed after several attempts"
+          exit 1
