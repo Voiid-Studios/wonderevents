@@ -84,7 +84,7 @@ public final class ClassDiscovery {
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
                 if ("file".equals(resource.getProtocol())) {
-                    File directory = new File(URLDecoder.decode(resource.getFile(), StandardCharsets.UTF_8));
+                    File directory = new File(URLDecoder.decode(resource.getFile(), StandardCharsets.UTF_8.name()));
                     discoverFromDirectory(plugin, directory, packageName, classes);
                 } else if ("jar".equals(resource.getProtocol())) {
                     JarURLConnection connection = (JarURLConnection) resource.openConnection();
@@ -144,8 +144,8 @@ public final class ClassDiscovery {
     }
 
     private static void logWarning(JavaPlugin plugin, String message) {
-        if (plugin instanceof WEBootstrap we && we.getYALogger() != null) {
-            we.getYALogger().warning(message);
+        if (plugin instanceof WEBootstrap && ((WEBootstrap) plugin).getYALogger() != null) {
+            ((WEBootstrap) plugin).getYALogger().warning(message);
             return;
         }
 

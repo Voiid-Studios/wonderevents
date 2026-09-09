@@ -3,6 +3,7 @@ package voiidstudios.wonderevents.addons;
 import dev.faststats.Attributes;
 
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.core.log.WonderLogMessages;
 import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.manifest.WonderManifestLoader;
@@ -22,6 +23,9 @@ import org.bukkit.permissions.Permission;
 import org.bukkit.permissions.PermissionDefault;
 
 public final class WonderAddonManager {
+    private static final String PREFIX = "[Addons] ";
+    private static final String SUFFIX = "addon";
+
     private final PluginContext context;
     private final YALogger logger;
     private final File addonsFolder;
@@ -60,8 +64,8 @@ public final class WonderAddonManager {
                     continue;
                 }
 
-                if (manifest.getBootstrap() == null || manifest.getBootstrap().isBlank()) {
-                    logger.passiveWarning("[Addons] Failed to load " + jar.getName() + ": the bootstrap class is missing in wonder-manifest.yml. Please contact the addon developer.");
+                if (manifest.getBootstrap() == null || manifest.getBootstrap().trim().isEmpty()) {
+                    logger.severe(PREFIX + WonderLogMessages.MISSING_BOOTSTRAP.format(jar.getName(), SUFFIX));
                     continue;
                 }
 
@@ -76,7 +80,7 @@ public final class WonderAddonManager {
 
                 String addonId = manifest.getId().toLowerCase();
                 if (loaded.containsKey(addonId)) {
-                    logger.passiveWarning("[Addons] An addon with the id '" + addonId + "' already exists. Skipping " + jar.getName());
+                    logger.warning(PREFIX + WonderLogMessages.ALREADY_LOADED.format(addonId, loaded.get(addonId).getDescriptor().getVersion(), SUFFIX, jar.getName()));
                     continue;
                 }
 
@@ -88,11 +92,11 @@ public final class WonderAddonManager {
                 try {
                     entry.getAddon().onLoad(entry.getContext());
                     loaded.put(addonId, entry);
-                    logger.success("[Addons] Loaded Addon: " + entry.getDescriptor());
+                    logger.success(PREFIX + "Loaded addon: " + entry.getDescriptor());
                     loadedIds.add(addonId);
                     progress = true;
                 } catch (Throwable e) {
-                    logger.passiveWarning("[Addons] Failed to load addon '" + addonId + "': onLoad() threw an error. Please contact the addon developer. Details: " + e.getMessage());
+                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(jar.getName(), SUFFIX));
                     track(e, "onLoad", addonId);
                     entry.closeClassLoader();
                 }
@@ -105,7 +109,7 @@ public final class WonderAddonManager {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
                 String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.passiveWarning("[Addons] Could not load " + jar.getName() + " because a dependency is missing: " + missing);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
             }
         }
 
@@ -117,7 +121,8 @@ public final class WonderAddonManager {
             try {
                 entry.getAddon().onEnable();
             } catch (Throwable e) {
-                logger.passiveWarning("[Addons] Failed to enable addon '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the addon developer. Details: " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onEnable", entry.getDescriptor().getName());
             }
         }
@@ -134,7 +139,7 @@ public final class WonderAddonManager {
         java.util.Set<String> newlyLoaded = loadNewAddons(currentJars);
         reloadPresentAddons(currentJars, previousOrder, newlyLoaded);
 
-        logger.success("[Addons] Reloaded! Active addons: " + loaded.size());
+        logger.success(PREFIX + "Reloaded! Active addons: " + loaded.size());
         return loaded.size();
     }
 
@@ -153,7 +158,9 @@ public final class WonderAddonManager {
 
             String id = manifest.getId().toLowerCase();
             if (jars.containsKey(id)) {
-                logger.passiveWarning("[Addons] An addon with the id '" + id + "' already exists. Skipping " + file.getName());
+                WonderManifest existingManifest = WonderManifestLoader.load(jars.get(id), logger);
+                String existingVersion = existingManifest != null ? existingManifest.getVersion() : "?";
+                logger.warning(PREFIX + WonderLogMessages.ALREADY_LOADED.format(id, existingVersion, SUFFIX, file.getName()));
                 continue;
             }
 
@@ -179,19 +186,21 @@ public final class WonderAddonManager {
             try {
                 entry.getAddon().onDisable();
             } catch (Throwable e) {
-                logger.passiveWarning("[Addons] Failed to disable addon '" + name + "': onDisable() threw an error. Please contact the addon developer. Details: " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
             } catch (Throwable cleanupError) {
-                logger.passiveWarning("[Addons] Failed to clean up addon '" + name + "': runtime cleanup threw an error. Please contact the addon developer. Details: " + cleanupError.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX));
+                logger.severe(cleanupError.getMessage());
                 track(cleanupError, "cleanup", name);
             }
 
             entry.closeClassLoader();
-            logger.passiveInfo("[Addons] Unloaded addon: " + name);
+            logger.passiveInfo(PREFIX + "Unloaded addon: " + name);
             disabled++;
         }
         return disabled;
@@ -220,8 +229,8 @@ public final class WonderAddonManager {
                     continue;
                 }
 
-                if (manifest.getBootstrap() == null || manifest.getBootstrap().isBlank()) {
-                    logger.passiveWarning("[Addons] Failed to load " + jar.getName() + ": the bootstrap class is missing in wonder-manifest.yml. Please contact the addon developer.");
+                if (manifest.getBootstrap() == null || manifest.getBootstrap().trim().isEmpty()) {
+                    logger.severe(PREFIX + WonderLogMessages.MISSING_BOOTSTRAP.format(jar.getName(), SUFFIX));
                     continue;
                 }
 
@@ -251,14 +260,16 @@ public final class WonderAddonManager {
                     try {
                         entry.getAddon().onEnable();
                     } catch (Throwable enableError) {
-                        logger.passiveWarning("[Addons] Failed to enable addon '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the addon developer. Details: " + enableError.getMessage());
+                        logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+                        logger.severe(enableError.getMessage());
                         track(enableError, "onEnable", entry.getDescriptor().getName());
                     }
 
-                    logger.success("[Addons] Loaded addon: " + entry.getDescriptor());
+                    logger.success(PREFIX + "Loaded addon: " + entry.getDescriptor());
                     progress = true;
                 } catch (Throwable e) {
-                    logger.passiveWarning("[Addons] Failed to load addon '" + addonId + "': onLoad() threw an error. Please contact the addon developer. Details: " + e.getMessage());
+                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(addonId, SUFFIX));
+                    logger.severe(e.getMessage());
                     track(e, "onLoad", addonId);
                     entry.closeClassLoader();
                 }
@@ -271,7 +282,7 @@ public final class WonderAddonManager {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
                 String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.passiveWarning("[Addons] Could not load " + jar.getName() + " because a dependency is missing: " + missing);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
             }
         }
 
@@ -294,7 +305,8 @@ public final class WonderAddonManager {
                 entry.getAddon().onReload();
                 reloaded++;
             } catch (Throwable e) {
-                logger.passiveWarning("[Addons] Failed to reload addon '" + entry.getDescriptor().getName() + "': onReload() threw an error. Details: " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONRELOAD_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onReload", entry.getDescriptor().getName());
             }
         }
@@ -310,19 +322,21 @@ public final class WonderAddonManager {
             try {
                 entry.getAddon().onDisable();
             } catch (Throwable e) {
-                logger.passiveWarning("[Addons] Failed to disable addon '" + name + "': " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
             } catch (Throwable cleanupError) {
-                logger.passiveWarning("[Addons] Cleanup failed for addon '" + name + "': " + cleanupError.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX));
+                logger.severe(cleanupError.getMessage());
                 track(cleanupError, "cleanup", name);
             }
 
             entry.closeClassLoader();
-            logger.passiveInfo("[Addons] Unloaded addon: " + name);
+            logger.passiveInfo(PREFIX + "Unloaded addon: " + name);
         }
 
         loaded.clear();
@@ -371,12 +385,13 @@ public final class WonderAddonManager {
         try {
             entry.getAddon().onEnable();
         } catch (Throwable e) {
-            logger.passiveWarning("[Addons] Failed to enable addon '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the addon developer. Details: " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "onEnable", entry.getDescriptor().getName());
         }
 
         disabled.remove(normalized);
-        logger.passiveInfo("[Addons] Enabled addon: " + entry.getDescriptor().getName());
+        logger.passiveInfo(PREFIX + "Enabled addon: " + entry.getDescriptor().getName());
         return AddonToggleResult.SUCCESS;
     }
 
@@ -398,12 +413,13 @@ public final class WonderAddonManager {
         try {
             entry.getAddon().onDisable();
         } catch (Throwable e) {
-            logger.passiveWarning("[Addons] Failed to disable addon '" + entry.getDescriptor().getName() + "': onDisable() threw an error. Please contact the addon developer. Details: " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "onDisable", entry.getDescriptor().getName());
         }
 
         disabled.add(normalized);
-        logger.passiveInfo("[Addons] Disabled addon: " + entry.getDescriptor().getName());
+        logger.passiveInfo(PREFIX + "Disabled addon: " + entry.getDescriptor().getName());
         return AddonToggleResult.SUCCESS;
     }
 
@@ -415,37 +431,37 @@ public final class WonderAddonManager {
 
     private LoadDecision canLoad(WonderManifest manifest) {
         String minCore = manifest.getMinCoreVersion();
-        if (minCore != null && !minCore.isBlank()) {
+        if (minCore != null && !minCore.trim().isEmpty()) {
             String current = VersionUtil.normalize(context.getPlugin().getDescription().getVersion());
             if (!VersionUtil.isAtLeast(current, minCore)) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requires WonderEvents " + minCore + " or newer, but the current version is " + current);
+                logger.severe(PREFIX + WonderLogMessages.MIN_CORE_VERSION.format(manifest.getName(), SUFFIX, minCore, current));
                 return LoadDecision.REJECTED;
             }
         }
 
         String maxCore = manifest.getMaxCoreVersion();
-        if (maxCore != null && !maxCore.isBlank()) {
+        if (maxCore != null && !maxCore.trim().isEmpty()) {
             String current = VersionUtil.normalize(context.getPlugin().getDescription().getVersion());
             if (!VersionUtil.isAtMost(current, maxCore)) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requires WonderEvents " + maxCore + " or older, but the current version is " + current);
+                logger.severe(PREFIX + WonderLogMessages.MAX_CORE_VERSION.format(manifest.getName(), SUFFIX, maxCore, current));
                 return LoadDecision.REJECTED;
             }
         }
 
         String minMc = manifest.getMinMinecraftVersion();
-        if (minMc != null && !minMc.isBlank()) {
+        if (minMc != null && !minMc.trim().isEmpty()) {
             String currentMc = ServerVersionUtil.getMinecraftVersion();
             if (!VersionUtil.isAtLeast(currentMc, minMc)) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requires Minecraft " + minMc + " or newer, but the server is running " + currentMc);
+                logger.severe(PREFIX + WonderLogMessages.MIN_MINECRAFT_VERSION.format(manifest.getName(), SUFFIX, minMc, currentMc));
                 return LoadDecision.REJECTED;
             }
         }
 
         String maxMc = manifest.getMaxMinecraftVersion();
-        if (maxMc != null && !maxMc.isBlank()) {
+        if (maxMc != null && !maxMc.trim().isEmpty()) {
             String currentMc = ServerVersionUtil.getMinecraftVersion();
             if (!VersionUtil.isAtMost(currentMc, maxMc)) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requires Minecraft " + maxMc + " or older, but the server is running " + currentMc);
+                logger.severe(PREFIX + WonderLogMessages.MAX_MINECRAFT_VERSION.format(manifest.getName(), SUFFIX, maxMc, currentMc));
                 return LoadDecision.REJECTED;
             }
         }
@@ -453,7 +469,7 @@ public final class WonderAddonManager {
         for (WonderManifest.DependencyRule rule : manifest.getPluginDependencies()) {
             boolean satisfied = rule.isSatisfiedBy(name -> context.getPlugin().getServer().getPluginManager().getPlugin(name) != null);
             if (rule.isRequired() && !satisfied) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requires " + rule.describe() + " (plugins) and the condition is not met.");
+                logger.severe(PREFIX + WonderLogMessages.MISSING_PLUGIN_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describe()));
                 return LoadDecision.REJECTED;
             }
         }
@@ -461,7 +477,7 @@ public final class WonderAddonManager {
         for (WonderManifest.DependencyRule rule : manifest.getPlatformDependencies()) {
             boolean satisfied = rule.isSatisfiedBy(PlatformDependencyChecker::isPresent);
             if (rule.isRequired() && !satisfied) {
-                logger.passiveWarning("[Addons] " + manifest.getName() + " requires " + rule.describe() + " (platform) and the condition is not met.");
+                logger.severe(PREFIX + WonderLogMessages.MISSING_PLATFORM_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describe()));
                 return LoadDecision.REJECTED;
             }
         }
@@ -500,7 +516,7 @@ public final class WonderAddonManager {
     }
 
     private PermissionDefault parsePermissionDefault(String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             return PermissionDefault.OP;
         }
 

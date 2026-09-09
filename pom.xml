@@ -5,12 +5,12 @@
 
     <groupId>voiidstudios.wonderevents</groupId>
     <artifactId>WonderEvents</artifactId>
-    <version>26.08.1</version>
+    <version>26.09.0</version>
     <packaging>jar</packaging>
 
     <properties>
-        <maven.compiler.source>25</maven.compiler.source>
-        <maven.compiler.target>25</maven.compiler.target>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <download.source>Unknown</download.source>
     </properties>
@@ -79,9 +79,9 @@
             <version>4.4.1</version>
         </dependency>
         <dependency>
-            <groupId>dev.faststats.metrics</groupId>
+            <groupId>dev.faststats.metrics.j8</groupId>
             <artifactId>bukkit</artifactId>
-            <version>0.27.2</version>
+            <version>0.29.0</version>
         </dependency>
 </dependencies>
 
@@ -110,13 +110,21 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>3.11.2</version>
                 <configuration>
-                    <source>25</source>
+                    <source>8</source>
                     <encoding>UTF-8</encoding>
                     <failOnError>false</failOnError>
                     <quiet>false</quiet>
                     <doclint>none</doclint>
                     <show>protected</show>
                     <additionalJOption>-Xdoclint:none</additionalJOption>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>8</release>
                 </configuration>
             </plugin>
             <plugin>

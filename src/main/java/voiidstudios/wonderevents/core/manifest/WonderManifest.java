@@ -65,11 +65,11 @@ public final class WonderManifest {
     }
 
     public String getId() {
-        return id.isBlank() ? name : id;
+        return id.trim().isEmpty() ? name : id;
     }
 
     public String getName() {
-        return name.isBlank() ? getId() : name;
+        return name.trim().isEmpty() ? getId() : name;
     }
 
     public String getVersion() {
@@ -129,14 +129,14 @@ public final class WonderManifest {
     }
 
     public CommandDefinition getCommand(String name) {
-        if (name == null || name.isBlank()) {
+        if (name == null || name.trim().isEmpty()) {
             return null;
         }
         return commands.get(normalizeKey(name));
     }
 
     public PermissionDefinition getPermission(String name) {
-        if (name == null || name.isBlank()) {
+        if (name == null || name.trim().isEmpty()) {
             return null;
         }
         return permissions.get(normalizeKey(name));

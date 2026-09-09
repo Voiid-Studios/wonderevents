@@ -17,7 +17,7 @@ public class UniversalFormatter {
     }
 
     public Object format(String text) {
-        if (text == null || text.isBlank()) {
+        if (text == null || text.trim().isEmpty()) {
             return "";
         }
 
@@ -144,8 +144,8 @@ public class UniversalFormatter {
         String warning = message + ", so falling back to the legacy format: "
                 + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
 
-        if (plugin instanceof WEBootstrap we && we.getYALogger() != null) {
-            we.getYALogger().warning(warning);
+        if (plugin instanceof WEBootstrap && ((WEBootstrap) plugin).getYALogger() != null) {
+            ((WEBootstrap) plugin).getYALogger().warning(warning);
         } else {
             plugin.getLogger().warning(warning);
         }

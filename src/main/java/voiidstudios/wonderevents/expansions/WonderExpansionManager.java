@@ -9,6 +9,7 @@ import voiidstudios.wonderevents.api.WEABootstrap;
 import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext;
 import voiidstudios.wonderevents.core.log.YALogger;
+import voiidstudios.wonderevents.core.log.WonderLogMessages;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.manifest.WonderManifestLoader;
 import voiidstudios.wonderevents.core.manifest.VersionUtil;
@@ -28,6 +29,9 @@ import java.util.List;
 import java.util.Map;
 
 public final class WonderExpansionManager {
+    private static final String PREFIX = "[Expansions] ";
+    private static final String SUFFIX = "expansion";
+
     private final PluginContext context;
     private final YALogger logger;
     private final File folder;
@@ -63,8 +67,8 @@ public final class WonderExpansionManager {
                     continue;
                 }
 
-                if (manifest.getBootstrap() == null || manifest.getBootstrap().isBlank()) {
-                    logger.passiveSevere("[Expansions] Failed to load " + jar.getName() + ": the bootstrap class is missing in wonder-manifest.yml. Please contact the expansion developer.");
+                if (manifest.getBootstrap() == null || manifest.getBootstrap().trim().isEmpty()) {
+                    logger.severe(PREFIX + WonderLogMessages.MISSING_BOOTSTRAP.format(jar.getName(), SUFFIX));
                     continue;
                 }
 
@@ -79,7 +83,7 @@ public final class WonderExpansionManager {
 
                 String expansionId = manifest.getId().toLowerCase();
                 if (loaded.containsKey(expansionId)) {
-                    logger.passiveWarning("[Expansions] An expansion with the id '" + expansionId + "' is already loaded. Skipping " + jar.getName());
+                    logger.warning(PREFIX + WonderLogMessages.ALREADY_LOADED.format(expansionId, loaded.get(expansionId).getDescriptor().getVersion(), SUFFIX, jar.getName()));
                     continue;
                 }
 
@@ -93,11 +97,12 @@ public final class WonderExpansionManager {
                     loaded.put(expansionId, entry);
                     ensureExpansionFolder(entry.getDescriptor());
 
-                    logger.success("[Expansions] Loaded expansion: " + entry.getDescriptor().getName());
+                    logger.success(PREFIX + "Loaded expansion: " + entry.getDescriptor().getName());
                     loadedNow++;
                     progress = true;
                 } catch (Throwable e) {
-                    logger.passiveSevere("[Expansions] Failed to load expansion '" + expansionId + "': onLoad() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(jar.getName(), SUFFIX));
+                    logger.severe(e.getMessage());
                     track(e, "onLoad", expansionId);
                     entry.closeClassLoader();
                 }
@@ -110,7 +115,7 @@ public final class WonderExpansionManager {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
                 String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.passiveWarning("[Expansions] Could not load " + jar.getName() + " because a dependency is missing: " + missing);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
             }
         }
 
@@ -122,7 +127,8 @@ public final class WonderExpansionManager {
             try {
                 entry.getExpansion().onEnable();
             } catch (Throwable e) {
-                logger.passiveSevere("[Expansions] Failed to enable expansion '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onEnable", entry.getDescriptor().getName());
             }
         }
@@ -139,7 +145,7 @@ public final class WonderExpansionManager {
         java.util.Set<String> newlyLoaded = loadNewExpansions(currentJars);
         reloadPresentExpansions(currentJars, previousOrder, newlyLoaded);
 
-        logger.success("[Expansions] Reloaded! Active expansions: " + loaded.size());
+        logger.success(PREFIX + "Reloaded! Active expansions: " + loaded.size());
         return loaded.size();
     }
 
@@ -158,7 +164,9 @@ public final class WonderExpansionManager {
 
             String id = manifest.getId().toLowerCase();
             if (jars.containsKey(id)) {
-                logger.passiveWarning("[Expansions] An expansion with the id '" + id + "' is already present. Skipping " + file.getName());
+                WonderManifest existingManifest = WonderManifestLoader.load(jars.get(id), logger);
+                String existingVersion = existingManifest != null ? existingManifest.getVersion() : "?";
+                logger.warning(PREFIX + WonderLogMessages.ALREADY_LOADED.format(id, existingVersion, SUFFIX, file.getName()));
                 continue;
             }
 
@@ -185,19 +193,21 @@ public final class WonderExpansionManager {
             try {
                 entry.getExpansion().onDisable();
             } catch (Throwable e) {
-                logger.passiveSevere("[Expansions] Failed to disable expansion '" + name + "': onDisable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
             } catch (Throwable cleanupError) {
-                logger.passiveSevere("[Expansions] Failed to clean up expansion '" + name + "': runtime cleanup threw an error. Please contact the expansion developer. Details: " + cleanupError.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX));
+                logger.severe(cleanupError.getMessage());
                 track(cleanupError, "cleanup", name);
             }
 
             entry.closeClassLoader();
-            logger.passiveInfo("[Expansions] Unloaded expansion: " + name);
+            logger.passiveInfo(PREFIX + "Unloaded expansion: " + name);
             disabled++;
         }
 
@@ -225,8 +235,8 @@ public final class WonderExpansionManager {
                     continue;
                 }
 
-                if (manifest.getBootstrap() == null || manifest.getBootstrap().isBlank()) {
-                    logger.passiveSevere("[Expansions] Failed to load " + jar.getName() + ": the bootstrap class is missing in wonder-manifest.yml. Please contact the expansion developer.");
+                if (manifest.getBootstrap() == null || manifest.getBootstrap().trim().isEmpty()) {
+                    logger.severe(PREFIX + WonderLogMessages.MISSING_BOOTSTRAP.format(jar.getName(), SUFFIX));
                     continue;
                 }
 
@@ -258,14 +268,16 @@ public final class WonderExpansionManager {
                     try {
                         entry.getExpansion().onEnable();
                     } catch (Throwable enableError) {
-                        logger.passiveSevere("[Expansions] Failed to enable expansion '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the expansion developer. Details: " + enableError.getMessage());
+                        logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+                        logger.severe(enableError.getMessage());
                         track(enableError, "onEnable", entry.getDescriptor().getName());
                     }
 
-                    logger.success("[Expansions] Loaded expansion: " + entry.getDescriptor().getName());
+                    logger.success(PREFIX + "Loaded expansion: " + entry.getDescriptor().getName());
                     progress = true;
                 } catch (Throwable e) {
-                    logger.passiveSevere("[Expansions] Failed to load expansion '" + expansionId + "': onLoad() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(expansionId, SUFFIX));
+                    logger.severe(e.getMessage());
                     track(e, "onLoad", expansionId);
                     entry.closeClassLoader();
                 }
@@ -278,7 +290,7 @@ public final class WonderExpansionManager {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
                 String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.passiveWarning("[Expansions] Could not load " + jar.getName() + " because a dependency is missing: " + missing);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
             }
         }
 
@@ -302,7 +314,8 @@ public final class WonderExpansionManager {
                 entry.getExpansion().onReload();
                 reloaded++;
             } catch (Throwable e) {
-                logger.passiveWarning("[Expansions] Failed to reload expansion '" + entry.getDescriptor().getName() + "': onReload() threw an error. Details: " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONRELOAD_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onReload", entry.getDescriptor().getName());
             }
         }
@@ -319,19 +332,21 @@ public final class WonderExpansionManager {
             try {
                 entry.getExpansion().onDisable();
             } catch (Throwable e) {
-                logger.passiveWarning("[Expansions] Failed to disable expansion '" + name + "': " + e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX));
+                logger.severe(e.getMessage());
                 track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
             } catch (Throwable cleanupError) {
-                logger.passiveWarning("[Expansions] Cleanup failed for expansion '" + name + "': " + cleanupError.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX));
+                logger.severe(cleanupError.getMessage());
                 track(cleanupError, "cleanup", name);
             }
 
             entry.closeClassLoader();
-            logger.passiveInfo("[Expansions] Unloaded expansion: " + name);
+            logger.passiveInfo(PREFIX + "Unloaded expansion: " + name);
         }
 
         loaded.clear();
@@ -380,12 +395,13 @@ public final class WonderExpansionManager {
         try {
             entry.getExpansion().onEnable();
         } catch (Throwable e) {
-            logger.passiveSevere("[Expansions] Failed to enable expansion '" + entry.getDescriptor().getName() + "': onEnable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "onEnable", entry.getDescriptor().getName());
         }
 
         disabled.remove(normalized);
-        logger.passiveInfo("[Expansions] Enabled expansion: " + entry.getDescriptor().getName());
+        logger.passiveInfo(PREFIX + "Enabled expansion: " + entry.getDescriptor().getName());
         return ExpansionToggleResult.SUCCESS;
     }
 
@@ -407,12 +423,13 @@ public final class WonderExpansionManager {
         try {
             entry.getExpansion().onDisable();
         } catch (Throwable e) {
-            logger.passiveSevere("[Expansions] Failed to disable expansion '" + entry.getDescriptor().getName() + "': onDisable() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "onDisable", entry.getDescriptor().getName());
         }
 
         disabled.add(normalized);
-        logger.passiveInfo("[Expansions] Disabled expansion: " + entry.getDescriptor().getName());
+        logger.passiveInfo(PREFIX + "Disabled expansion: " + entry.getDescriptor().getName());
         return ExpansionToggleResult.SUCCESS;
     }
 
@@ -442,7 +459,8 @@ public final class WonderExpansionManager {
                     context.getPlugin().getClass().getClassLoader()
             );
         } catch (Throwable e) {
-            logger.passiveWarning("[Expansions] Could not create a loader for " + manifest.getName() + ": " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.INTERNAL_CLASSLOADER_ERROR.format(manifest.getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "classloader-creation", manifest.getId());
             return null;
         }
@@ -451,18 +469,19 @@ public final class WonderExpansionManager {
         try {
             Class<?> mainClass = classLoader.loadClass(manifest.getBootstrap());
             if (!WEABootstrap.class.isAssignableFrom(mainClass)) {
-                logger.passiveWarning("[Expansions] The bootstrap class in " + manifest.getName() + " does not extend WEABootstrap.");
+                logger.severe(PREFIX + WonderLogMessages.BOOTSTRAP_NOT_ASSIGNABLE.format(manifest.getName(), SUFFIX));
                 closeQuietly(classLoader);
                 return null;
             }
             expansion = (WEABootstrap) mainClass.getDeclaredConstructor().newInstance();
         } catch (LinkageError e) {
-            logger.passiveSevere("[Expansions] Could not start " + manifest.getName() + ": it looks like it was built against a different/older WonderEvents API (" + e.getClass().getSimpleName() + ": " + e.getMessage() + "). Ask the expansion developer to recompile it against this WonderEvents version.");
+            logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()));
             track(e, "bootstrap-instantiation", manifest.getId());
             closeQuietly(classLoader);
             return null;
         } catch (Throwable e) {
-            logger.passiveWarning("[Expansions] Could not start " + manifest.getName() + ": the bootstrap class could not be created. Details: " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.BOOTSTRAP_INSTANTIATION_ERROR.format(manifest.getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "bootstrap-instantiation", manifest.getId());
             closeQuietly(classLoader);
             return null;
@@ -480,12 +499,13 @@ public final class WonderExpansionManager {
         try {
             expansion.init(featureContext);
         } catch (LinkageError e) {
-            logger.passiveSevere("[Expansions] Could not start " + manifest.getName() + ": it looks like it was built against a different/older WonderEvents API (" + e.getClass().getSimpleName() + ": " + e.getMessage() + "). Ask the expansion developer to recompile it against this WonderEvents version.");
+            logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()));
             track(e, "init", manifest.getId());
             closeQuietly(classLoader);
             return null;
         } catch (Throwable e) {
-            logger.passiveSevere("[Expansions] Failed to initialize " + manifest.getName() + ": init() threw an error. Please contact the expansion developer. Details: " + e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.INIT_ERROR.format(manifest.getName(), SUFFIX));
+            logger.severe(e.getMessage());
             track(e, "init", manifest.getId());
             closeQuietly(classLoader);
             return null;
@@ -496,37 +516,37 @@ public final class WonderExpansionManager {
 
     private LoadDecision canLoad(WonderManifest manifest) {
         String minCore = manifest.getMinCoreVersion();
-        if (minCore != null && !minCore.isBlank()) {
+        if (minCore != null && !minCore.trim().isEmpty()) {
             String current = VersionUtil.normalize(context.getPlugin().getDescription().getVersion());
             if (!VersionUtil.isAtLeast(current, minCore)) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires WonderEvents " + minCore + " or newer, but the current version is " + current);
+                logger.severe(PREFIX + WonderLogMessages.MIN_CORE_VERSION.format(manifest.getName(), SUFFIX, minCore, current));
                 return LoadDecision.REJECTED;
             }
         }
 
         String maxCore = manifest.getMaxCoreVersion();
-        if (maxCore != null && !maxCore.isBlank()) {
+        if (maxCore != null && !maxCore.trim().isEmpty()) {
             String current = VersionUtil.normalize(context.getPlugin().getDescription().getVersion());
             if (!VersionUtil.isAtMost(current, maxCore)) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires WonderEvents " + maxCore + " or older, but the current version is " + current);
+                logger.severe(PREFIX + WonderLogMessages.MAX_CORE_VERSION.format(manifest.getName(), SUFFIX, maxCore, current));
                 return LoadDecision.REJECTED;
             }
         }
 
         String minMc = manifest.getMinMinecraftVersion();
-        if (minMc != null && !minMc.isBlank()) {
+        if (minMc != null && !minMc.trim().isEmpty()) {
             String currentMc = ServerVersionUtil.getMinecraftVersion();
             if (!VersionUtil.isAtLeast(currentMc, minMc)) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires Minecraft " + minMc + " or newer, but the server is running " + currentMc);
+                logger.severe(PREFIX + WonderLogMessages.MIN_MINECRAFT_VERSION.format(manifest.getName(), SUFFIX, minMc, currentMc));
                 return LoadDecision.REJECTED;
             }
         }
 
         String maxMc = manifest.getMaxMinecraftVersion();
-        if (maxMc != null && !maxMc.isBlank()) {
+        if (maxMc != null && !maxMc.trim().isEmpty()) {
             String currentMc = ServerVersionUtil.getMinecraftVersion();
             if (!VersionUtil.isAtMost(currentMc, maxMc)) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires Minecraft " + maxMc + " or older, but the server is running " + currentMc);
+                logger.severe(PREFIX + WonderLogMessages.MAX_MINECRAFT_VERSION.format(manifest.getName(), SUFFIX, maxMc, currentMc));
                 return LoadDecision.REJECTED;
             }
         }
@@ -534,7 +554,7 @@ public final class WonderExpansionManager {
         for (WonderManifest.DependencyRule rule : manifest.getPluginDependencies()) {
             boolean satisfied = rule.isSatisfiedBy(name -> Bukkit.getPluginManager().getPlugin(name) != null);
             if (rule.isRequired() && !satisfied) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires " + rule.describe() + " (plugins), but the condition is not met.");
+                logger.severe(PREFIX + WonderLogMessages.MISSING_PLUGIN_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describe()));
                 return LoadDecision.REJECTED;
             }
         }
@@ -542,7 +562,7 @@ public final class WonderExpansionManager {
         for (WonderManifest.DependencyRule rule : manifest.getPlatformDependencies()) {
             boolean satisfied = rule.isSatisfiedBy(PlatformDependencyChecker::isPresent);
             if (rule.isRequired() && !satisfied) {
-                logger.passiveWarning("[Expansions] " + manifest.getName() + " requires " + rule.describe() + " (platform), but the condition is not met.");
+                logger.severe(PREFIX + WonderLogMessages.MISSING_PLATFORM_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describe()));
                 return LoadDecision.REJECTED;
             }
         }
@@ -623,7 +643,7 @@ public final class WonderExpansionManager {
     }
 
     private PermissionDefault parsePermissionDefault(String value) {
-        if (value == null || value.isBlank()) {
+        if (value == null || value.trim().isEmpty()) {
             return PermissionDefault.OP;
         }
 

@@ -30,7 +30,6 @@ public final class WEBootstrap extends JavaPlugin {
     public String version = getDescription().getVersion();
 
     private static final String WE_LOADED_PROPERTY = "wonderevents.jvm.loaded";
-    private static final long UPDATE_CHECK_INTERVAL = 8L * 60L * 60L * 20L; // 8 hours
 
     private YALogger yaLogger;
     private PluginContext context;
@@ -127,6 +126,9 @@ public final class WEBootstrap extends JavaPlugin {
     }
 
     private void scheduleUpdateChecks() {
+        int delaySeconds = context.getConfigManager().getUpdateCheckDelay();
+        long intervalTicks = delaySeconds * 20L;
+
         Runnable checkTask = () -> {
             if (firstUpdateCheck) {
                 yaLogger.process("Checking for updates...");
@@ -138,30 +140,7 @@ public final class WEBootstrap extends JavaPlugin {
             checkUpdates(updateChecker.check());
         };
 
-        if (isFolia()) {
-            try {
-                Object asyncScheduler = Bukkit.class.getMethod("getAsyncScheduler").invoke(null);
-                asyncScheduler.getClass()
-                        .getMethod("runAtFixedRate", org.bukkit.plugin.Plugin.class, java.util.function.Consumer.class,
-                                long.class, long.class, java.util.concurrent.TimeUnit.class)
-                        .invoke(asyncScheduler, this, (java.util.function.Consumer<Object>) task -> checkTask.run(),
-                                1L, 8L, java.util.concurrent.TimeUnit.HOURS);
-            } catch (Exception e) {
-                yaLogger.passiveWarning("Failed to schedule the update check on Folia: " + e.getMessage());
-            }
-            return;
-        }
-
-        getServer().getScheduler().runTaskTimerAsynchronously(this, checkTask, 0L, UPDATE_CHECK_INTERVAL);
-    }
-
-    private static boolean isFolia() {
-        try {
-            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return Bukkit.getServer().getName().equalsIgnoreCase("Folia");
-        }
+        getServer().getScheduler().runTaskTimerAsynchronously(this, checkTask, 0L, intervalTicks);
     }
 
     public void onDisable() {
@@ -200,7 +179,7 @@ public final class WEBootstrap extends JavaPlugin {
         }
 
         long start = System.nanoTime();
-        var messages = context.getMessagesManager();
+        voiidstudios.wonderevents.core.managers.MessagesManager messages = context.getMessagesManager();
         messages.sendPrefixed(sender, "command.reload.process");
 
         boolean reloadConfigs = scope == ReloadScope.ALL || scope == ReloadScope.CONFIGS;
@@ -415,7 +394,7 @@ public final class WEBootstrap extends JavaPlugin {
                 .line("This usually happens when you use /bukkit:reload, PlugMan, or similar.")
                 .blank()
                 .line("This action IS NOT SUPPORTED and may cause SERIOUS PROBLEMS WITH YOUR")
-                .line("EXPANSIONS AND ADD-ONS!!!")
+                .line("EXPANSIONS AND ADDONS!!!")
                 .blank()
                 .line("YOU WILL GET NO SUPPORT FOR THE PLUGIN FOR ANY ISSUES YOU ENCOUNTER")
                 .line("AFTER THE SERVER RELOAD!")
@@ -443,7 +422,7 @@ public final class WEBootstrap extends JavaPlugin {
         String mcVersion = info.minecraftVersionName();
 
         OptionalInt build = info.buildNumber();
-        if(build.isEmpty())
+        if(!build.isPresent())
             return String.format("§b%s §7(MC: %s)", name, mcVersion);
         
         return String.format("§b%s §7(MC: %s, Build: %s)", name, mcVersion, build.getAsInt());

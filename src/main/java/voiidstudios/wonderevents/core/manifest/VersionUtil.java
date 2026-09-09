@@ -12,7 +12,7 @@ public final class VersionUtil {
         if (plusIndex >= 0) {
             cleaned = cleaned.substring(0, plusIndex);
         }
-        return cleaned.isBlank() ? "0.0.0" : cleaned;
+        return cleaned.trim().isEmpty() ? "0.0.0" : cleaned;
     }
 
     public static boolean isAtLeast(String currentVersion, String minimumVersion) {
@@ -43,7 +43,7 @@ public final class VersionUtil {
             return 0;
         }
         String raw = parts[index].replaceAll("[^0-9].*$", "");
-        if (raw.isBlank()) {
+        if (raw.trim().isEmpty()) {
             return 0;
         }
         try {

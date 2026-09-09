@@ -31,7 +31,7 @@ public final class ServerVersionUtil {
         try {
             io.papermc.paper.ServerBuildInfo info = io.papermc.paper.ServerBuildInfo.buildInfo();
             String mcVersion = info.minecraftVersionName();
-            if (mcVersion != null && !mcVersion.isBlank()) {
+            if (mcVersion != null && !mcVersion.trim().isEmpty()) {
                 return mcVersion.trim();
             }
         } catch (Throwable ignored) {}
@@ -42,7 +42,7 @@ public final class ServerVersionUtil {
         try {
             String bukkitVersion = Bukkit.getBukkitVersion(); // e.g. "1.8.8-R0.1-SNAPSHOT"
             String mcVersion = bukkitVersion.split("-")[0];
-            if (!mcVersion.isBlank()) {
+            if (!mcVersion.trim().isEmpty()) {
                 return mcVersion.trim();
             }
         } catch (Throwable ignored) {}

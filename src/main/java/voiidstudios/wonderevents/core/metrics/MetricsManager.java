@@ -9,6 +9,7 @@ import voiidstudios.wonderevents.core.PluginContext;
 import voiidstudios.wonderevents.expansions.WonderExpansionDescriptor;
 import voiidstudios.wonderevents.utils.DownloadSource;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public final class MetricsManager {
 
     private Map<String, Integer> buildExpansionChart() {
         if (context.getExpansionManager() == null) {
-            return Map.of();
+            return Collections.emptyMap();
         }
         return buildFlattened(
                 context.getExpansionManager().getLoadedDescriptors(),
@@ -76,7 +77,7 @@ public final class MetricsManager {
 
     private Map<String, Integer> buildAddonChart() {
         if (context.getAddonManager() == null) {
-            return Map.of();
+            return Collections.emptyMap();
         }
         return buildFlattened(
                 context.getAddonManager().getLoadedDescriptors(),

@@ -73,7 +73,7 @@ public final class WonderExpansionDescriptor {
     }
 
     public String toString() {
-        String author = manifest.getAuthor().isBlank() ? "Unknown" : manifest.getAuthor();
+        String author = manifest.getAuthor().trim().isEmpty() ? "Unknown" : manifest.getAuthor();
         return manifest.getName() + " v" + manifest.getVersion() + " by " + author;
     }
 }

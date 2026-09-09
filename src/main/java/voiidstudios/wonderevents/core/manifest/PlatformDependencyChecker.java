@@ -4,7 +4,7 @@ public final class PlatformDependencyChecker {
     private PlatformDependencyChecker() {}
 
     public static boolean isPresent(String entry) {
-        if (entry == null || entry.isBlank()) return false;
+        if (entry == null || entry.trim().isEmpty()) return false;
 
         switch (entry.trim().toLowerCase(java.util.Locale.ROOT)) {
             case "paper":

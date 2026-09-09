@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 public final class UpdateChecker {
     private static final String API_URL = "https://api.github.com/repos/Voiid-Studios/wonderevents/releases/latest";
-    public static final String RELEASES_PAGE_URL = "https://modrinth.com/plugin/WonderEvents";
+    public static final String RELEASES_PAGE_URL = "https://github.com/Voiid-Studios/wonderevents/releases";
 
     private final String currentVersion;
     private final YALogger logger;

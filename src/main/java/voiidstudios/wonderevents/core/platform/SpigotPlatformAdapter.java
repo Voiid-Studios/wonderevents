@@ -27,6 +27,6 @@ public class SpigotPlatformAdapter implements PlatformAdapter {
 
     public void sendMessage(CommandSender sender, String message) {
         Object formatted = formatter.format(message);
-        sender.sendMessage(formatted instanceof String text ? text : TextUtils.toLegacy(message));
+        sender.sendMessage(formatted instanceof String ? (String) formatted : TextUtils.toLegacy(message));
     }
 }

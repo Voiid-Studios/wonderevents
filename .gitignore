@@ -1,5 +1,5 @@
 src/main/resources/download-source.txt
-EXPORTED/
+_EXPORTED/
 wonderevents-proyect-*
 create-zip.ps1
 build-all.ps1

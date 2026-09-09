@@ -40,7 +40,11 @@ public final class ConsoleBox {
             return "";
         }
 
-        return String.valueOf(character).repeat(amount);
+        StringBuilder builder = new StringBuilder(amount);
+        for (int i = 0; i < amount; i++) {
+            builder.append(character);
+        }
+        return builder.toString();
     }
 
     private static String padRight(String text, int visibleLength, int targetLength) {

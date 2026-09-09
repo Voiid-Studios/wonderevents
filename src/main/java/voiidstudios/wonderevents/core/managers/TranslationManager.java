@@ -35,7 +35,7 @@ public final class TranslationManager {
     }
 
     public void loadLanguage(String langCode) {
-        this.currentLang = (langCode == null || langCode.isBlank()) ? "en_US" : langCode;
+        this.currentLang = (langCode == null || langCode.trim().isEmpty()) ? "en_US" : langCode;
 
         jarLangBase = loadYamlFromResource("messages/origins/en_US.yml");
 

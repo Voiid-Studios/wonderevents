@@ -91,6 +91,6 @@ public class MainCommandManager implements CommandExecutor, TabCompleter {
     }
 
     private static boolean hasPermission(CommandSender sender, String permission) {
-        return permission == null || permission.isBlank() || sender.hasPermission(permission);
+        return permission == null || permission.trim().isEmpty() || sender.hasPermission(permission);
     }
 }

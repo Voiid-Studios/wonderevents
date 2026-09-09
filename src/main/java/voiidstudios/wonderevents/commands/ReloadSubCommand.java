@@ -37,13 +37,24 @@ public final class ReloadSubCommand implements WEACommand {
         }
 
         String scopeArg = args[0].toLowerCase(Locale.ROOT);
-        WEBootstrap.ReloadScope scope = switch (scopeArg) {
-            case "all" -> WEBootstrap.ReloadScope.ALL;
-            case "configs", "config" -> WEBootstrap.ReloadScope.CONFIGS;
-            case "expansions", "expansion" -> WEBootstrap.ReloadScope.EXPANSIONS;
-            case "addons", "addon" -> WEBootstrap.ReloadScope.ADDONS;
-            default -> null;
-        };
+        WEBootstrap.ReloadScope scope;
+        switch (scopeArg) {
+            case "all":
+                scope = WEBootstrap.ReloadScope.ALL;
+                break;
+            case "configs":
+                scope = WEBootstrap.ReloadScope.CONFIGS;
+                break;
+            case "expansions":
+                scope = WEBootstrap.ReloadScope.EXPANSIONS;
+                break;
+            case "addons":
+                scope = WEBootstrap.ReloadScope.ADDONS;
+                break;
+            default:
+                scope = null;
+                break;
+        }
 
         if (scope == null) {
             messages.sendPrefixed(sender, "command.reload.usage", null);

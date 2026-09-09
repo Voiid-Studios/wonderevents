@@ -3,6 +3,7 @@ package voiidstudios.wonderevents.core.manifest;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 
+import voiidstudios.wonderevents.core.log.WonderLogMessages;
 import voiidstudios.wonderevents.core.log.YALogger;
 
 import java.io.File;
@@ -22,11 +23,15 @@ public final class WonderManifestLoader {
     private WonderManifestLoader() {}
 
     public static WonderManifest load(File jarFile, YALogger logger) {
+        String[] source = resolveSourcePrefix(jarFile);
+        String prefix = source[0];
+        String suffix = source[1];
+
         try (JarFile jar = new JarFile(jarFile)) {
             JarEntry entry = jar.getJarEntry(WonderManifest.FILE_NAME);
             if (entry == null) {
                 if (logger != null) {
-                    logger.passiveWarning(jarFile.getName() + " does not contain " + WonderManifest.FILE_NAME);
+                    logger.severe(prefix + WonderLogMessages.MISSING_MANIFEST.format(jarFile.getName(), suffix));
                 }
                 return null;
             }
@@ -37,17 +42,32 @@ public final class WonderManifestLoader {
             }
         } catch (IOException e) {
             if (logger != null) {
-                logger.passiveWarning("Could not read " + jarFile.getName() + ": " + e.getMessage());
+                logger.severe(prefix + WonderLogMessages.CANT_READ_MANIFEST.format(jarFile.getName(), suffix));
+                logger.severe(e.getMessage());
             }
             return null;
         } catch (Throwable e) {
             // A malformed wonder-manifest.yml (bad types, invalid YAML structure, etc.)
             // must never bring down the whole addon/expansion loading loop.
             if (logger != null) {
-                logger.passiveWarning("Could not parse " + WonderManifest.FILE_NAME + " in " + jarFile.getName() + ": " + e.getMessage());
+                logger.severe(prefix + WonderLogMessages.CANNOT_PARSE_MANIFEST.format(jarFile.getName(), suffix));
+                logger.severe(e.getMessage());
             }
             return null;
         }
+    }
+
+    private static String[] resolveSourcePrefix(File jarFile) {
+        File parent = jarFile.getParentFile();
+        String folderName = parent != null ? parent.getName() : "";
+
+        if (folderName.equalsIgnoreCase("expansions")) {
+            return new String[]{"[Expansions] ", "expansion"};
+        }
+        if (folderName.equalsIgnoreCase("addons")) {
+            return new String[]{"[Addons] ", "addon"};
+        }
+        return new String[]{"", ""};
     }
 
     public static WonderManifest parse(YamlConfiguration yaml, String sourceName) {
@@ -118,7 +138,8 @@ public final class WonderManifestLoader {
         if (value == null) {
             return Collections.emptyList();
         }
-        if (value instanceof List<?> list) {
+        if (value instanceof List<?>) {
+            List<?> list = (List<?>) value;
             List<String> result = new ArrayList<>();
             for (Object entry : list) {
                 if (entry != null) {
@@ -128,15 +149,15 @@ public final class WonderManifestLoader {
             return result;
         }
 
-        return new ArrayList<>(List.of(String.valueOf(value)));
+        return new ArrayList<>(Collections.singletonList(String.valueOf(value)));
     }
 
     private static boolean toBoolean(Object value, boolean defaultValue) {
-        if (value instanceof Boolean bool) {
-            return bool;
+        if (value instanceof Boolean) {
+            return (Boolean) value;
         }
-        if (value instanceof String str) {
-            return Boolean.parseBoolean(str);
+        if (value instanceof String) {
+            return Boolean.parseBoolean((String) value);
         }
         return defaultValue;
     }

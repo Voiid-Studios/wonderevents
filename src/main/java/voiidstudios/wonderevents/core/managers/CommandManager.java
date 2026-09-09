@@ -82,7 +82,7 @@ public class CommandManager {
     }
 
     public WEACommand findCommand(String name) {
-        if (name == null || name.isBlank()) {
+        if (name == null || name.trim().isEmpty()) {
             return null;
         }
 
@@ -136,7 +136,7 @@ public class CommandManager {
         aliases = sanitizeAliases(name, aliases);
 
         RuntimeCommand runtimeCommand = new RuntimeCommand(name, usage, aliases, permission, command);
-        if (definition != null && !definition.getPermissionMessage().isBlank()) {
+        if (definition != null && !definition.getPermissionMessage().trim().isEmpty()) {
             runtimeCommand.setPermissionMessage(definition.getPermissionMessage());
         }
 
@@ -194,12 +194,12 @@ public class CommandManager {
             }
             knownCommandsField.setAccessible(true);
             Object value = knownCommandsField.get(commandMap);
-            if (!(value instanceof Map<?, ?> rawMap)) {
+            if (!(value instanceof Map<?, ?>)) {
                 return;
             }
 
             @SuppressWarnings("unchecked")
-            Map<String, Command> knownCommands = (Map<String, Command>) rawMap;
+            Map<String, Command> knownCommands = (Map<String, Command>) value;
             knownCommands.entrySet().removeIf(entry -> entry.getValue() == command);
         } catch (Exception ignored) {}
     }
@@ -221,8 +221,8 @@ public class CommandManager {
         try {
             Method method = Bukkit.getServer().getClass().getMethod("getCommandMap");
             Object value = method.invoke(Bukkit.getServer());
-            if (value instanceof CommandMap commandMap) {
-                return commandMap;
+            if (value instanceof CommandMap) {
+                return (CommandMap) value;
             }
         } catch (Exception ignored) {}
 
@@ -230,8 +230,8 @@ public class CommandManager {
             Field field = Bukkit.getServer().getClass().getDeclaredField("commandMap");
             field.setAccessible(true);
             Object value = field.get(Bukkit.getServer());
-            if (value instanceof CommandMap commandMap) {
-                return commandMap;
+            if (value instanceof CommandMap) {
+                return (CommandMap) value;
             }
         } catch (Exception ignored) {}
 
@@ -252,14 +252,14 @@ public class CommandManager {
 
     private static List<String> sanitizeAliases(String name, List<String> aliases) {
         if (aliases == null || aliases.isEmpty()) {
-            return List.of();
+            return Collections.emptyList();
         }
 
         List<String> sanitized = new ArrayList<>();
         Set<String> seen = new java.util.LinkedHashSet<>();
         String primary = name == null ? "" : name.toLowerCase(Locale.ROOT);
         for (String alias : aliases) {
-            if (alias == null || alias.isBlank()) {
+            if (alias == null || alias.trim().isEmpty()) {
                 continue;
             }
             String normalized = alias.toLowerCase(Locale.ROOT);
@@ -273,7 +273,7 @@ public class CommandManager {
     }
 
     private static String safe(String value, String fallback) {
-        return value == null || value.isBlank() ? fallback : value;
+        return value == null || value.trim().isEmpty() ? fallback : value;
     }
 
     private static String firstNonBlank(String... values) {
@@ -281,22 +281,38 @@ public class CommandManager {
             return "";
         }
         for (String value : values) {
-            if (value != null && !value.isBlank()) {
+            if (value != null && !value.trim().isEmpty()) {
                 return value;
             }
         }
         return "";
     }
 
-    private record RuntimeRegistration(RuntimeCommand runtimeCommand, CommandMap commandMap) {}
+    private static final class RuntimeRegistration {
+        private final RuntimeCommand runtimeCommand;
+        private final CommandMap commandMap;
+
+        RuntimeRegistration(RuntimeCommand runtimeCommand, CommandMap commandMap) {
+            this.runtimeCommand = runtimeCommand;
+            this.commandMap = commandMap;
+        }
+
+        RuntimeCommand runtimeCommand() {
+            return runtimeCommand;
+        }
+
+        CommandMap commandMap() {
+            return commandMap;
+        }
+    }
 
     private static final class RuntimeCommand extends Command {
         private final WEACommand delegate;
 
         RuntimeCommand(String name, String usageMessage, List<String> aliases, String permission, WEACommand delegate) {
-            super(name, "", usageMessage == null || usageMessage.isBlank() ? "/" + name : usageMessage, aliases == null ? List.of() : List.copyOf(aliases));
+            super(name, "", usageMessage == null || usageMessage.trim().isEmpty() ? "/" + name : usageMessage, aliases == null ? Collections.<String>emptyList() : Collections.unmodifiableList(new ArrayList<>(aliases)));
             this.delegate = delegate;
-            if (permission != null && !permission.isBlank()) {
+            if (permission != null && !permission.trim().isEmpty()) {
                 setPermission(permission);
             }
         }

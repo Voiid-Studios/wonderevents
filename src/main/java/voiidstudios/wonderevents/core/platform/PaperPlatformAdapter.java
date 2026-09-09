@@ -63,8 +63,8 @@ public class PaperPlatformAdapter implements PlatformAdapter {
 
     public void sendMessage(CommandSender sender, String message) {
         Object formatted = formatter.format(message);
-        if (formatted instanceof String text) {
-            sender.sendMessage(text);
+        if (formatted instanceof String) {
+            sender.sendMessage((String) formatted);
             return;
         }
 
@@ -89,8 +89,8 @@ public class PaperPlatformAdapter implements PlatformAdapter {
         warnedSendFallback = true;
         String warning = message + ", so falling back to legacy mode: " + throwable.getClass().getSimpleName() + ": " + throwable.getMessage();
 
-        if (plugin instanceof WEBootstrap met && met.getYALogger() != null) {
-            met.getYALogger().warning(warning);
+        if (plugin instanceof WEBootstrap && ((WEBootstrap) plugin).getYALogger() != null) {
+            ((WEBootstrap) plugin).getYALogger().warning(warning);
         } else {
             plugin.getLogger().warning(warning);
         }

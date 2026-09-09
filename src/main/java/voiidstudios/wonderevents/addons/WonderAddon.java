@@ -4,8 +4,8 @@ import voiidstudios.wonderevents.api.WEABootstrap;
 
 public abstract class WonderAddon extends WEABootstrap {
     public final void onLoad(voiidstudios.wonderevents.core.bootstrap.WonderFeatureContext context) {
-        if (context instanceof WonderAddonContext addonContext) {
-            onLoad(addonContext);
+        if (context instanceof WonderAddonContext) {
+            onLoad((WonderAddonContext) context);
             return;
         }
         onLoad(null);

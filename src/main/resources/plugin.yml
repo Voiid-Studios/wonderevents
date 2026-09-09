@@ -1,6 +1,6 @@
 name: WonderEvents
 main: voiidstudios.wonderevents.WEBootstrap
-api-version: '1.16'
+api-version: '1.13'
 
 version: ${project.version}
 authors:
