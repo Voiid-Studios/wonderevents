@@ -1,6 +1,8 @@
 package voiidstudios.wonderevents.core;
 
 import voiidstudios.wonderevents.WEBootstrap;
+import voiidstudios.wonderevents.core.loader.FeatureExportRegistry;
+import voiidstudios.wonderevents.core.loader.BukkitExportBridge;
 import voiidstudios.wonderevents.addons.WonderAddonManager;
 import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.managers.CommandManager;
@@ -26,6 +28,8 @@ public final class PluginContext {
     private final PlatformAdapter platformAdapter;
     private final SchedulerAdapter schedulerAdapter;
     private final AdventureManager adventureManager;
+    private final FeatureExportRegistry exportRegistry;
+    private final BukkitExportBridge exportBridge;
 
     private MetricsManager metricsManager;
     private WonderAddonManager addonManager;
@@ -33,6 +37,8 @@ public final class PluginContext {
 
     public PluginContext(WEBootstrap plugin) {
         this.plugin = plugin;
+        this.exportRegistry = new FeatureExportRegistry();
+        this.exportBridge = new BukkitExportBridge(plugin, exportRegistry);
         this.configManager = new ConfigManager(plugin);
         this.configManager.bootstrap();
         this.messagesManager = new MessagesManager(plugin, configManager.getLanguage(), plugin.getYALogger());
@@ -53,6 +59,8 @@ public final class PluginContext {
     }
 
     public WEBootstrap getPlugin() { return plugin; }
+    public FeatureExportRegistry getExportRegistry() { return exportRegistry; }
+    public BukkitExportBridge getExportBridge() { return exportBridge; }
     public WEBootstrap getCore() { return plugin; }
     public ConfigManager getConfigManager() { return configManager; }
     public MessagesManager getMessagesManager() { return messagesManager; }

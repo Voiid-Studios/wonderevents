@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import voiidstudios.wonderevents.WEBootstrap;
 import voiidstudios.wonderevents.api.WEACommand;
 import voiidstudios.wonderevents.core.PluginContext;
+import voiidstudios.wonderevents.core.loader.FeatureClassLoader;
 import voiidstudios.wonderevents.core.managers.AdventureManager;
 import voiidstudios.wonderevents.core.manifest.WonderManifest;
 import voiidstudios.wonderevents.core.log.YALogger;
@@ -181,6 +182,7 @@ public class WonderFeatureContext {
     }
 
     public void unregisterRuntime() {
+        unregisterExports();
         PluginManager pluginManager = pluginContext.getPlugin().getServer().getPluginManager();
 
         for (Listener listener : new ArrayList<>(registeredListeners)) {
@@ -201,5 +203,24 @@ public class WonderFeatureContext {
         registeredPermissions.clear();
 
         loadedConfigs.clear();
+    }
+
+    public void registerExports() throws Exception {
+        if (manifest.getExports().isEmpty()) {
+            return;
+        }
+        if (!(featureClassLoader instanceof FeatureClassLoader)) {
+            throw new IllegalStateException("Exports require a FeatureClassLoader");
+        }
+        FeatureClassLoader loader = (FeatureClassLoader) featureClassLoader;
+        loader.setExportRegistry(pluginContext.getExportRegistry());
+        pluginContext.getExportBridge().refresh();
+        pluginContext.getExportRegistry().register(loader, manifest.getName(), manifest.getExports());
+    }
+
+    public void unregisterExports() {
+        if (featureClassLoader instanceof FeatureClassLoader) {
+            pluginContext.getExportRegistry().unregister((FeatureClassLoader) featureClassLoader);
+        }
     }
 }

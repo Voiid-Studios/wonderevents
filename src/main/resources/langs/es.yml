@@ -1,0 +1,77 @@
+# ====== COMANDOS GENERALES ======
+command:
+  no_permissions: "&cNo tienes permisos para usar este comando"
+  unknown: "&cSubcomando desconocido. Usa /wonder help"
+
+  help:
+    header: "&7Ejecutando &dWonderEvents &b%VERSION%"
+    lines:
+      - "&5> &3/wonder help &7- Muestra este mensaje."
+      - "&5> &3/wonder reload &b<all|configs|expansions|addons> &7- Recarga las configuraciones, expansiones y addons"
+      - "&5> &3/wonder addons enable &b<id> &7- Habilita un addon"
+      - "&5> &3/wonder addons disable &b<id> &7- Deshabilita un addon"
+      - "&5> &3/wonder addons list &7- Muestra todos los addons activos"
+      - "&5> &3/wonder expansions enable &b<id> &7- Habilita una expansión"
+      - "&5> &3/wonder expansions disable &b<id> &7- Deshabilita una expansión"
+      - "&5> &3/wonder expansions list &7- Muestra todas las expansiones activas"
+
+  reload:
+    usage: "&cUso: /wonder reload <all|configs|expansions|addons>"
+    process: "&7Recargando..."
+    success_config: "&aConfiguración recargada"
+    success_messages: "&aMensajes recargados"
+    success_expansions: "&aExpansiones recargadas: %EXPANSIONS%"
+    success_addons: "&aAddons recargados: %ADDONS%"
+    done: "&aRecargado en &f%MS%ms"
+
+  addons:
+    enable:
+      usage: "&cUso: /wonder addons enable <id>"
+      not_found: "&cEl addon &e%ID% &cno existe"
+      already: "&cEl addon &e%ID% &cya está habilitado"
+      success: "&aAddon &e%ID% &ahabilitado"
+      failed: "&cNo se pudo habilitar el addon &e%ID%&c. Revisa la consola para obtener más detalles."
+    disable:
+      usage: "&cUso: /wonder addons disable <id>"
+      not_found: "&cEl addon &e%ID% &cno existe"
+      already: "&cEl addon &e%ID% &cya está deshabilitado"
+      success: "&aAddon &e%ID% &adeshabilitado"
+    list:
+      title: "&eAddons activos (%ADDONS%):"
+      entry: "%STATUSCOLOR%%NAME% &7(%VERSION%)"
+      empty: "&cEstá un poco solitario aquí, ¿no? No tienes ningún addon..."
+      enabled: "&a"
+      disabled: "&c"
+      separator: "&f, "
+
+  expansions:
+    enable:
+      usage: "&cUso: /wonder expansions enable <id>"
+      not_found: "&cLa expansión &e%ID% &cno existe"
+      already: "&cLa expansión &e%ID% &cya está habilitada"
+      success: "&aExpansión &e%ID% &ahabilitada"
+      failed: "&cNo se pudo habilitar la expansión &e%ID%&c. Revisa la consola para obtener más detalles."
+    disable:
+      usage: "&cUso: /wonder expansions disable <id>"
+      not_found: "&cLa expansión &e%ID% &cno existe"
+      already: "&cLa expansión &e%ID% &cya está deshabilitada"
+      success: "&aExpansión &e%ID% &adeshabilitada"
+    list:
+      title: "&eExpansiones activas (%EXPANSIONS%):"
+      entry: "%STATUSCOLOR%%NAME% &7(%VERSION%)"
+      empty: "&cEstá un poco solitario aquí, ¿no? No tienes ninguna expansión..."
+      enabled: "&a"
+      disabled: "&c"
+      separator: "&f, "
+
+# ====== SISTEMA ======
+system:
+  update:
+    available:
+      - "&b│ ⚠ Hay una actualización estable disponible para WonderEvents"
+      - "&b│ "
+      - "&b│ Última versión: &f%LATEST%"
+      - "&b│ Versión actual: &f%CURRENT%"
+      - "&b│ "
+      - "&b│ Puedes descargarla en:"
+      - "&b│ &f%UPDATELINK%"

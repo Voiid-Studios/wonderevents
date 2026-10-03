@@ -148,6 +148,7 @@ public final class WEBootstrap extends JavaPlugin {
 
         if (addonManager != null) addonManager.disableAddons();
         if (expansionManager != null) expansionManager.disableExpansions();
+        if (context != null) context.getExportRegistry().close();
         if (metricsManager != null) metricsManager.stop();
         if (context != null) context.getAdventureManager().stop();
 

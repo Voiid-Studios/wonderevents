@@ -13,6 +13,14 @@
 
 ![Divider](https://voiid-studios.github.io/stuff/assets/project/WonderEvents/divider.png)
 
+## ⚠️ WonderEvents requires these dependencies!
+
+<p align="center" style="text-align: center;">
+  <a href="https://modrinth.com/plugin/tsunamilib"><img src="https://voiid-studios.github.io/stuff/assets/buttons/require/tl/cozy.svg" alt="Download dependency TsunamiLib" style="margin: 5px 10px;"></a>
+</p>
+
+![Divider](https://voiid-studios.github.io/stuff/assets/project/WonderEvents/divider.png)
+
 ## ❓ What is WonderEvents?
 
 WonderEvents (WE) is the core framework behind Voiid Studios' Minecraft events plugins. Instead of shipping one monolithic plugin per server, WE gives you a lightweight cross-platform base (Spigot/Paper/forks) that expansions and addons plug directly into.
@@ -36,7 +44,7 @@ Expansions and addons are just `.jar` files dropped into their respective folder
 
 - **Minecraft version:** `1.16+`
 - **Server software:** Spigot, Paper or forks (CraftBukkit and Folia are NOT supported!)
-- No external dependencies required — everything WonderEvents needs ships bundled inside the plugin
+- **Required dependency:** [TsunamiLib](https://modrinth.com/plugin/tsunamilib) (install its `.jar` alongside WonderEvents)
 
 ![Divider](https://voiid-studios.github.io/stuff/assets/project/WonderEvents/divider.png)
 
@@ -60,7 +68,7 @@ Expansions and addons are just `.jar` files dropped into their respective folder
   - `faststats_metrics` — toggle anonymous metrics
   - `auto_update` — automatically download new stable releases when found
   - `update_notification` — notify players with `wonderevents.updatenotify` (and console) when an update is available
-  - `language` — pick the language file used from `messages/origins/`
+  - `Messages.language` — pick the language file used from `langs/`
 
 ![Divider](https://voiid-studios.github.io/stuff/assets/project/WonderEvents/divider.png)
 

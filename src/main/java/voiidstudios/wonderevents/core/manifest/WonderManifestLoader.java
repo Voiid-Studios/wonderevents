@@ -106,8 +106,27 @@ public final class WonderManifestLoader {
                 expansions,
                 addons,
                 commands,
-                permissions
+                permissions,
+                parseExports(yaml)
         );
+    }
+
+    private static List<String> parseExports(YamlConfiguration yaml) {
+        if (!yaml.contains("exports")) {
+            return Collections.emptyList();
+        }
+        Object raw = yaml.get("exports");
+        if (!(raw instanceof List<?>)) {
+            throw new IllegalArgumentException("exports must be a list of Java package names");
+        }
+        List<String> exports = new ArrayList<>();
+        for (Object entry : (List<?>) raw) {
+            if (!(entry instanceof String)) {
+                throw new IllegalArgumentException("Each export must be a Java package name");
+            }
+            exports.add((String) entry);
+        }
+        return exports;
     }
 
     private static List<WonderManifest.DependencyRule> parseDependencyList(YamlConfiguration yaml, String path) {

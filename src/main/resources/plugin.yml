@@ -1,6 +1,7 @@
 name: WonderEvents
 main: voiidstudios.wonderevents.WEBootstrap
 api-version: '1.13'
+depend: [TsunamiLib]
 
 version: ${project.version}
 authors:

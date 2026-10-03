@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 
 public final class ConfigManager {
     private static final int MIN_UPDATE_CHECK_DELAY_SECONDS = 300; // 5 minutes
@@ -26,6 +27,7 @@ public final class ConfigManager {
 
     public void bootstrap() {
         ensureFolders();
+        LanguageFiles.installBundled(plugin);
         ensureCoreConfig();
         reload();
     }
@@ -83,14 +85,20 @@ public final class ConfigManager {
         if (!data.exists()) {
             data.mkdirs();
         }
-        new File(data, "messages").mkdirs();
-        new File(data, "messages/custom").mkdirs();
-        new File(data, "messages/origins").mkdirs();
+        new File(data, "langs").mkdirs();
     }
 
     private void ensureCoreConfig() {
         if (!configFile.exists()) {
             plugin.saveResource("config.yml", false);
+            this.config = YamlConfiguration.loadConfiguration(configFile);
+            String serverLanguage = Locale.getDefault().getLanguage().toLowerCase(Locale.ROOT);
+            if (serverLanguage.length() >= 2) {
+                serverLanguage = serverLanguage.substring(0, 2);
+            }
+            File languageFile = LanguageFiles.file(plugin, serverLanguage);
+            config.set("Messages.language", languageFile != null && languageFile.isFile() ? serverLanguage : LanguageFiles.DEFAULT_LANGUAGE);
+            save();
         }
     }
 
@@ -116,7 +124,7 @@ public final class ConfigManager {
     }
 
     public String getLanguage() {
-        return config.getString("Messages.language", "en_US");
+        return config.getString("Messages.language", LanguageFiles.DEFAULT_LANGUAGE);
     }
 
     public File getConfigFile() {

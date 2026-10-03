@@ -46,13 +46,13 @@ public class UniversalFormatter {
             return null;
         }
 
-        Class<?> legacyClass = Class.forName("net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer");
+        Class<?> legacyClass = Class.forName("voiidstudios.tsunamilib.libs.adventure.text.serializer.legacy.LegacyComponentSerializer");
         Object serializer = createLegacySerializer(legacyClass);
         return legacyClass.getMethod("deserialize", String.class).invoke(serializer, text.replace('\u00A7', '&'));
     }
 
     private Object createLegacySerializer(Class<?> legacyClass) throws ReflectiveOperationException {
-        Class<?> builderClass = Class.forName("net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer$Builder");
+        Class<?> builderClass = Class.forName("voiidstudios.tsunamilib.libs.adventure.text.serializer.legacy.LegacyComponentSerializer$Builder");
         Object builder = legacyClass.getMethod("builder").invoke(null);
 
         builderClass.getMethod("character", char.class).invoke(builder, '&');
@@ -64,15 +64,15 @@ public class UniversalFormatter {
     }
 
     private String serializeMiniMessage(Object component) throws ReflectiveOperationException {
-        Class<?> componentClass = Class.forName("net.kyori.adventure.text.Component");
-        Class<?> miniMessageClass = Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
+        Class<?> componentClass = Class.forName("voiidstudios.tsunamilib.libs.adventure.text.Component");
+        Class<?> miniMessageClass = Class.forName("voiidstudios.tsunamilib.libs.adventure.text.minimessage.MiniMessage");
         Object miniMessage = miniMessageClass.getMethod("miniMessage").invoke(null);
 
         return (String) miniMessageClass.getMethod("serialize", componentClass).invoke(miniMessage, component);
     }
 
     private Object deserializeMiniMessage(String text) throws ReflectiveOperationException {
-        Class<?> miniMessageClass = Class.forName("net.kyori.adventure.text.minimessage.MiniMessage");
+        Class<?> miniMessageClass = Class.forName("voiidstudios.tsunamilib.libs.adventure.text.minimessage.MiniMessage");
         Object miniMessage = miniMessageClass.getMethod("miniMessage").invoke(null);
 
         try {
@@ -86,7 +86,7 @@ public class UniversalFormatter {
         }
 
         try {
-            Class<?> tagResolverClass = Class.forName("net.kyori.adventure.text.minimessage.tag.resolver.TagResolver");
+            Class<?> tagResolverClass = Class.forName("voiidstudios.tsunamilib.libs.adventure.text.minimessage.tag.resolver.TagResolver");
             Object emptyResolvers = Array.newInstance(tagResolverClass, 0);
             return miniMessageClass.getMethod("deserialize", String.class, emptyResolvers.getClass())
                     .invoke(miniMessage, text, emptyResolvers);
@@ -113,15 +113,15 @@ public class UniversalFormatter {
 
     private boolean hasMiniMessage() {
         if (hasMiniMessage == null) {
-            hasMiniMessage = classExists("net.kyori.adventure.text.minimessage.MiniMessage")
-                    && classExists("net.kyori.adventure.text.Component");
+            hasMiniMessage = classExists("voiidstudios.tsunamilib.libs.adventure.text.minimessage.MiniMessage")
+                    && classExists("voiidstudios.tsunamilib.libs.adventure.text.Component");
         }
         return hasMiniMessage;
     }
 
     private boolean hasLegacySerializer() {
         if (hasLegacySerializer == null) {
-            hasLegacySerializer = classExists("net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer");
+            hasLegacySerializer = classExists("voiidstudios.tsunamilib.libs.adventure.text.serializer.legacy.LegacyComponentSerializer");
         }
         return hasLegacySerializer;
     }

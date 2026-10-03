@@ -87,6 +87,9 @@ public final class ExpansionsSubCommand implements WEACommand {
                 : manager.enableExpansion(id);
 
         switch (result) {
+            case FAILED:
+                messages.sendPrefixed(sender, "command.expansions.enable.failed", placeholders);
+                break;
             case NOT_FOUND:
                 messages.sendPrefixed(sender, "command.expansions.enable.not_found", placeholders);
                 break;

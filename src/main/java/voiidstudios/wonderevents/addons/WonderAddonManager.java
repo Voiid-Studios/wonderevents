@@ -124,6 +124,8 @@ public final class WonderAddonManager {
                 logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
                 logger.severe(e.getMessage());
                 track(e, "onEnable", entry.getDescriptor().getName());
+                entry.getContext().unregisterExports();
+                disabled.add(entry.getDescriptor().getId().toLowerCase());
             }
         }
     }
@@ -263,6 +265,8 @@ public final class WonderAddonManager {
                         logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
                         logger.severe(enableError.getMessage());
                         track(enableError, "onEnable", entry.getDescriptor().getName());
+                        entry.getContext().unregisterExports();
+                        disabled.add(addonId);
                     }
 
                     logger.success(PREFIX + "Loaded addon: " + entry.getDescriptor());
@@ -383,11 +387,14 @@ public final class WonderAddonManager {
         }
 
         try {
+            entry.getContext().registerExports();
             entry.getAddon().onEnable();
         } catch (Throwable e) {
             logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
             logger.severe(e.getMessage());
             track(e, "onEnable", entry.getDescriptor().getName());
+            entry.getContext().unregisterExports();
+            return AddonToggleResult.FAILED;
         }
 
         disabled.remove(normalized);
@@ -419,6 +426,7 @@ public final class WonderAddonManager {
         }
 
         disabled.add(normalized);
+        entry.getContext().unregisterExports();
         logger.passiveInfo(PREFIX + "Disabled addon: " + entry.getDescriptor().getName());
         return AddonToggleResult.SUCCESS;
     }
@@ -426,7 +434,8 @@ public final class WonderAddonManager {
     public enum AddonToggleResult {
         SUCCESS,
         ALREADY,
-        NOT_FOUND
+        NOT_FOUND,
+        FAILED
     }
 
     private LoadDecision canLoad(WonderManifest manifest) {

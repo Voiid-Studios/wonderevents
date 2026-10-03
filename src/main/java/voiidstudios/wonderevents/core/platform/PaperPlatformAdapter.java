@@ -2,25 +2,21 @@ package voiidstudios.wonderevents.core.platform;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+import voiidstudios.tsunamilib.TsunamiLib;
+import voiidstudios.tsunamilib.libs.adventure.text.Component;
 
 import voiidstudios.wonderevents.WEBootstrap;
 import voiidstudios.wonderevents.utils.TextUtils;
 import voiidstudios.wonderevents.utils.UniversalFormatter;
 
-import java.lang.reflect.Method;
-
 public class PaperPlatformAdapter implements PlatformAdapter {
     private final Plugin plugin;
     private final UniversalFormatter formatter;
-    private Class<?> audienceClass;
-    private Class<?> componentClass;
-    private Method audienceSendMessageMethod;
     private boolean warnedSendFallback;
 
     public PaperPlatformAdapter(Plugin plugin) {
         this.plugin = plugin;
         this.formatter = new UniversalFormatter(plugin);
-        initializeAudience();
     }
 
     public static boolean isAvailable() {
@@ -36,19 +32,6 @@ public class PaperPlatformAdapter implements PlatformAdapter {
         }
     }
 
-    private void initializeAudience() {
-        try {
-            this.audienceClass = Class.forName("net.kyori.adventure.audience.Audience");
-            this.componentClass = Class.forName("net.kyori.adventure.text.Component");
-            this.audienceSendMessageMethod = audienceClass.getMethod("sendMessage", componentClass);
-        } catch (ReflectiveOperationException | LinkageError exception) {
-            warnSendFallback("Adventure is not available", exception);
-            this.audienceClass = null;
-            this.componentClass = null;
-            this.audienceSendMessageMethod = null;
-        }
-    }
-
     public String getName() {
         return supportsAdventure() ? "Paper/Fork + Adventure" : "Paper/Fork";
     }
@@ -58,7 +41,7 @@ public class PaperPlatformAdapter implements PlatformAdapter {
     }
 
     public boolean supportsAdventure() {
-        return audienceClass != null && componentClass != null && audienceSendMessageMethod != null;
+        return TsunamiLib.isAvailable() && TsunamiLib.getAPI().getAdventureManager().isReady();
     }
 
     public void sendMessage(CommandSender sender, String message) {
@@ -68,14 +51,14 @@ public class PaperPlatformAdapter implements PlatformAdapter {
             return;
         }
 
-        if (!supportsAdventure() || !componentClass.isInstance(formatted) || !audienceClass.isInstance(sender)) {
+        if (!supportsAdventure() || !(formatted instanceof Component)) {
             sender.sendMessage(TextUtils.toLegacy(message));
             return;
         }
 
         try {
-            audienceSendMessageMethod.invoke(sender, formatted);
-        } catch (ReflectiveOperationException | LinkageError exception) {
+            TsunamiLib.getAPI().getAdventureManager().sender(sender).sendMessage((Component) formatted);
+        } catch (RuntimeException | LinkageError exception) {
             warnSendFallback("Could not send the Adventure component", exception);
             sender.sendMessage(TextUtils.toLegacy(message));
         }

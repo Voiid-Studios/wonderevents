@@ -27,6 +27,7 @@ public final class WonderManifest {
     private final List<DependencyRule> addonDependencies;
     private final Map<String, CommandDefinition> commands;
     private final Map<String, PermissionDefinition> permissions;
+    private final List<String> exports;
 
     public WonderManifest(
             String id,
@@ -46,6 +47,17 @@ public final class WonderManifest {
             Map<String, CommandDefinition> commands,
             Map<String, PermissionDefinition> permissions
     ) {
+        this(id, name, version, author, description, bootstrap, minCoreVersion, maxCoreVersion,
+                minMinecraftVersion, maxMinecraftVersion, pluginDependencies, platformDependencies,
+                expansionDependencies, addonDependencies, commands, permissions, Collections.emptyList());
+    }
+
+    public WonderManifest(String id, String name, String version, String author, String description,
+            String bootstrap, String minCoreVersion, String maxCoreVersion, String minMinecraftVersion,
+            String maxMinecraftVersion, List<DependencyRule> pluginDependencies,
+            List<DependencyRule> platformDependencies, List<DependencyRule> expansionDependencies,
+            List<DependencyRule> addonDependencies, Map<String, CommandDefinition> commands,
+            Map<String, PermissionDefinition> permissions, List<String> exports) {
         this.id = emptyIfNull(id);
         this.name = emptyIfNull(name);
         this.version = emptyIfNull(version);
@@ -62,6 +74,11 @@ public final class WonderManifest {
         this.addonDependencies = immutableList(addonDependencies);
         this.commands = immutableCopy(commands);
         this.permissions = immutableCopy(permissions);
+        this.exports = voiidstudios.wonderevents.core.loader.FeatureClassLoader.validateExports(exports);
+    }
+
+    public List<String> getExports() {
+        return exports;
     }
 
     public String getId() {

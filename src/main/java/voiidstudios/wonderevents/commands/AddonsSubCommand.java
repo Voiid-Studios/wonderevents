@@ -87,6 +87,9 @@ public final class AddonsSubCommand implements WEACommand {
                 : manager.enableAddon(id);
 
         switch (result) {
+            case FAILED:
+                messages.sendPrefixed(sender, "command.addons.enable.failed", placeholders);
+                break;
             case NOT_FOUND:
                 messages.sendPrefixed(sender, "command.addons.enable.not_found", placeholders);
                 break;

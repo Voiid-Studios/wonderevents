@@ -14,5 +14,5 @@ Config:
     delay: 43200 # 12 hours
 
 Messages:
-  # Default language file located in messages/origins/<language>.yml
-  language: en_US
+  # Language file located in langs/<language>.yml; custom files are supported.
+  language: en

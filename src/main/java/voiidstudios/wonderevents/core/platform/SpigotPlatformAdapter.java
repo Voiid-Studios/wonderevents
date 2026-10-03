@@ -2,6 +2,8 @@ package voiidstudios.wonderevents.core.platform;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
+import voiidstudios.tsunamilib.TsunamiLib;
+import voiidstudios.tsunamilib.libs.adventure.text.Component;
 
 import voiidstudios.wonderevents.utils.TextUtils;
 import voiidstudios.wonderevents.utils.UniversalFormatter;
@@ -22,11 +24,15 @@ public class SpigotPlatformAdapter implements PlatformAdapter {
     }
 
     public boolean supportsAdventure() {
-        return false;
+        return TsunamiLib.isAvailable() && TsunamiLib.getAPI().getAdventureManager().isReady();
     }
 
     public void sendMessage(CommandSender sender, String message) {
         Object formatted = formatter.format(message);
-        sender.sendMessage(formatted instanceof String ? (String) formatted : TextUtils.toLegacy(message));
+        if (formatted instanceof Component && supportsAdventure()) {
+            TsunamiLib.getAPI().getAdventureManager().sender(sender).sendMessage((Component) formatted);
+        } else {
+            sender.sendMessage(formatted instanceof String ? (String) formatted : TextUtils.toLegacy(message));
+        }
     }
 }

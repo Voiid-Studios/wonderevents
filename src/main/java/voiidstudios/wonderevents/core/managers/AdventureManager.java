@@ -1,11 +1,10 @@
 package voiidstudios.wonderevents.core.managers;
 
-import net.kyori.adventure.audience.Audience;
-import net.kyori.adventure.platform.bukkit.BukkitAudiences;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.minimessage.MiniMessage;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
-import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import voiidstudios.tsunamilib.TsunamiLib;
+import voiidstudios.tsunamilib.libs.adventure.audience.Audience;
+import voiidstudios.tsunamilib.libs.adventure.platform.bukkit.BukkitAudiences;
+import voiidstudios.tsunamilib.libs.adventure.text.Component;
+import voiidstudios.tsunamilib.libs.adventure.text.minimessage.MiniMessage;
 
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -14,44 +13,39 @@ import voiidstudios.wonderevents.core.PluginContext;
 
 import java.util.UUID;
 
+/** WonderEvents facade over the Adventure bridge owned by TsunamiLib. */
 public final class AdventureManager {
-    private final PluginContext context;
-    private BukkitAudiences audiences;
+    private voiidstudios.tsunamilib.managers.AdventureManager delegate;
 
     public AdventureManager(PluginContext context) {
-        this.context = context;
     }
 
     public void start() {
-        if (audiences != null) {
+        if (delegate != null) {
             return;
         }
 
-        try {
-            audiences = BukkitAudiences.create(context.getPlugin());
-        } catch (Exception exception) {
-            if (context.getPlugin().getYALogger() != null) {
-                context.getPlugin().getYALogger().severe("Could not start the Adventure bridge: " + exception.getMessage(), exception);
-            }
+        voiidstudios.tsunamilib.managers.AdventureManager shared = TsunamiLib.getAPI().getAdventureManager();
+        if (!shared.isReady()) {
+            throw new IllegalStateException("TsunamiLib's Adventure bridge is not ready");
         }
+        delegate = shared;
     }
 
     public void stop() {
-        if (audiences != null) {
-            audiences.close();
-            audiences = null;
-        }
+        // TsunamiLib owns the shared bridge; only detach this facade.
+        delegate = null;
     }
 
     public boolean isReady() {
-        return audiences != null;
+        return delegate != null && delegate.isReady();
     }
 
     public BukkitAudiences audiences() {
-        if (audiences == null) {
+        if (!isReady()) {
             throw new IllegalStateException("The WonderEvents Adventure bridge is not ready yet (plugin disabled?)");
         }
-        return audiences;
+        return delegate.audiences();
     }
 
     public Audience player(Player player) {
@@ -79,19 +73,23 @@ public final class AdventureManager {
     }
 
     public Component mini(String text) {
-        return miniMessage().deserialize(text == null ? "" : text);
+        audiences();
+        return delegate.mini(text);
     }
 
     public Component legacy(String text) {
-        return LegacyComponentSerializer.legacyAmpersand().deserialize(text == null ? "" : text);
+        audiences();
+        return delegate.legacy(text);
     }
 
     public String plain(Component component) {
-        return component == null ? "" : PlainTextComponentSerializer.plainText().serialize(component);
+        audiences();
+        return delegate.plain(component);
     }
 
     public MiniMessage miniMessage() {
-        return MiniMessage.miniMessage();
+        audiences();
+        return delegate.miniMessage();
     }
 
     public void sendMini(CommandSender target, String text) {

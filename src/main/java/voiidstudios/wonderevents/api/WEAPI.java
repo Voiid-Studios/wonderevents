@@ -12,4 +12,8 @@ public final class WEAPI {
     public PluginContext getContext() {
         return context;
     }
+
+    public Class<?> resolveExportedClass(String className) throws ClassNotFoundException {
+        return context.getExportRegistry().resolve(className);
+    }
 }

@@ -30,6 +30,7 @@ command:
       not_found: "&cAddon &e%ID% &cdoes not exist"
       already: "&cAddon &e%ID% &cis already enabled"
       success: "&aAddon &e%ID% &aenabled"
+      failed: "&cCould not enable addon &e%ID%&c. Check the console for details."
     disable:
       usage: "&cUse: /wonder addons disable <id>"
       not_found: "&cAddon &e%ID% &cdoes not exist"
@@ -49,6 +50,7 @@ command:
       not_found: "&cExpansion &e%ID% &cdoes not exist"
       already: "&cExpansion &e%ID% &cis already enabled"
       success: "&aExpansion &e%ID% &aenabled"
+      failed: "&cCould not enable expansion &e%ID%&c. Check the console for details."
     disable:
       usage: "&cUse: /wonder expansions disable <id>"
       not_found: "&cExpansion &e%ID% &cdoes not exist"

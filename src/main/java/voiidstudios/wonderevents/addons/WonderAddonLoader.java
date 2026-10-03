@@ -34,7 +34,7 @@ final class WonderAddonLoader {
     WonderAddonEntry load(File jarFile, WonderManifest manifest) {
         URLClassLoader classLoader;
         try {
-            classLoader = new FeatureClassLoader(new URL[]{jarFile.toURI().toURL()}, context.getPlugin().getClass().getClassLoader());
+            classLoader = new FeatureClassLoader(new URL[]{jarFile.toURI().toURL()}, context.getPlugin().getClass().getClassLoader(), manifest.getExports());
         } catch (Throwable e) {
             logger.passiveWarning("[Addons] Could not create the ClassLoader for " + manifest.getName() + ": " + e.getMessage());
             track(e, "classloader-creation", manifest);
@@ -68,6 +68,7 @@ final class WonderAddonLoader {
         WonderAddonContext addonContext = new WonderAddonContext(context, manifest, classLoader, addonDataFolder);
 
         try {
+            addonContext.registerExports();
             addon.init(addonContext);
         } catch (LinkageError e) {
             logger.passiveSevere("[Addons] Could not start " + manifest.getName() + ": it looks like it was built against a different/older WonderEvents API (" + e.getClass().getSimpleName() + ": " + e.getMessage() + "). Ask the addon developer to recompile it against this WonderEvents version.");

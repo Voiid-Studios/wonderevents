@@ -130,6 +130,8 @@ public final class WonderExpansionManager {
                 logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
                 logger.severe(e.getMessage());
                 track(e, "onEnable", entry.getDescriptor().getName());
+                entry.getContext().unregisterExports();
+                disabled.add(entry.getDescriptor().getId().toLowerCase());
             }
         }
     }
@@ -271,6 +273,8 @@ public final class WonderExpansionManager {
                         logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
                         logger.severe(enableError.getMessage());
                         track(enableError, "onEnable", entry.getDescriptor().getName());
+                        entry.getContext().unregisterExports();
+                        disabled.add(expansionId);
                     }
 
                     logger.success(PREFIX + "Loaded expansion: " + entry.getDescriptor().getName());
@@ -393,11 +397,14 @@ public final class WonderExpansionManager {
         }
 
         try {
+            entry.getContext().registerExports();
             entry.getExpansion().onEnable();
         } catch (Throwable e) {
             logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
             logger.severe(e.getMessage());
             track(e, "onEnable", entry.getDescriptor().getName());
+            entry.getContext().unregisterExports();
+            return ExpansionToggleResult.FAILED;
         }
 
         disabled.remove(normalized);
@@ -429,6 +436,7 @@ public final class WonderExpansionManager {
         }
 
         disabled.add(normalized);
+        entry.getContext().unregisterExports();
         logger.passiveInfo(PREFIX + "Disabled expansion: " + entry.getDescriptor().getName());
         return ExpansionToggleResult.SUCCESS;
     }
@@ -436,7 +444,8 @@ public final class WonderExpansionManager {
     public enum ExpansionToggleResult {
         SUCCESS,
         ALREADY,
-        NOT_FOUND
+        NOT_FOUND,
+        FAILED
     }
 
     public File getExpansionDataFolder(String id) {
@@ -454,10 +463,7 @@ public final class WonderExpansionManager {
     private WonderExpansionEntry loadEntry(File jarFile, WonderManifest manifest) {
         URLClassLoader classLoader;
         try {
-            classLoader = new FeatureClassLoader(
-                    new URL[]{jarFile.toURI().toURL()},
-                    context.getPlugin().getClass().getClassLoader()
-            );
+            classLoader = new FeatureClassLoader(new URL[]{jarFile.toURI().toURL()}, context.getPlugin().getClass().getClassLoader(), manifest.getExports());
         } catch (Throwable e) {
             logger.severe(PREFIX + WonderLogMessages.INTERNAL_CLASSLOADER_ERROR.format(manifest.getName(), SUFFIX));
             logger.severe(e.getMessage());
@@ -497,6 +503,7 @@ public final class WonderExpansionManager {
         registerManifestPermissions(featureContext, manifest);
 
         try {
+            featureContext.registerExports();
             expansion.init(featureContext);
         } catch (LinkageError e) {
             logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()));
