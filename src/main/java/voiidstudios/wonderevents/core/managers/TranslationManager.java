@@ -35,10 +35,12 @@ public final class TranslationManager {
         LanguageFiles.installBundled(plugin);
         this.currentLang = (langCode == null || langCode.trim().isEmpty())
                 ? LanguageFiles.DEFAULT_LANGUAGE : langCode.trim();
-        File selectedFile = LanguageFiles.file(plugin, currentLang);
-        if (selectedFile == null || !selectedFile.isFile()) {
+        String resolvedLanguage = LanguageFiles.resolve(plugin, currentLang);
+        if (resolvedLanguage == null) {
             logger.passiveWarning("Language '" + currentLang + "' was not found in langs; using en.");
             currentLang = LanguageFiles.DEFAULT_LANGUAGE;
+        } else {
+            currentLang = resolvedLanguage;
         }
 
         jarLangBase = loadYamlFromResource("langs/en.yml");

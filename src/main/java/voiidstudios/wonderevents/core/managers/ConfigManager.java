@@ -38,6 +38,12 @@ public final class ConfigManager {
         }
         this.config = YamlConfiguration.loadConfiguration(configFile);
         migrateConfig();
+        String configuredLanguage = getLanguage();
+        String resolvedLanguage = LanguageFiles.resolve(plugin, configuredLanguage);
+        if (resolvedLanguage != null && !resolvedLanguage.equals(configuredLanguage)) {
+            config.set("Messages.language", resolvedLanguage);
+            save();
+        }
     }
 
     private void migrateConfig() {

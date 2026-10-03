@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -19,6 +20,25 @@ final class LanguageFiles {
             return null;
         }
         return new File(plugin.getDataFolder(), "langs/" + name + ".yml");
+    }
+
+    static String resolve(JavaPlugin plugin, String name) {
+        if (name == null || name.trim().isEmpty()) {
+            name = DEFAULT_LANGUAGE;
+        }
+        name = name.trim();
+        File exact = file(plugin, name);
+        if (exact != null && exact.isFile()) {
+            return name;
+        }
+        if (name.matches("(?i)[a-z]{2}(?:[_-][a-z0-9]{2,8})*")) {
+            String language = name.substring(0, 2).toLowerCase(Locale.ROOT);
+            File shortened = file(plugin, language);
+            if (shortened != null && shortened.isFile()) {
+                return language;
+            }
+        }
+        return null;
     }
 
     static void installBundled(JavaPlugin plugin) {
