@@ -82,7 +82,7 @@ public enum WonderLogMessages {
     ),
     MISSING_PLUGIN_DEPENDENCY(
         "WM-304",
-        "[ERROR %s] Unable to load the %s %s! It requires %s (plugin), but the condition is not met."
+        "[ERROR %s] Unable to load the %s %s! %s"
     ),
     MISSING_PLATFORM_DEPENDENCY(
         "WM-305",
@@ -90,7 +90,7 @@ public enum WonderLogMessages {
     ),
     MISSING_DEPENDENCY(
         "WM-306",
-        "[ERROR %s] Unable to load the %s %s! It requires the dependency %s, but it is not present."
+        "[ERROR %s] Unable to load the %s %s! %s"
     ),
 
     // ---- 4xx - Non-fatal warnings ----

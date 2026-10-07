@@ -179,12 +179,18 @@ public final class WonderManifest {
         private final List<String> any;
         private final List<String> all;
         private final List<String> none;
+        private final VersionConstraint version;
 
         public DependencyRule(boolean required, List<String> any, List<String> all, List<String> none) {
+            this(required, any, all, none, null);
+        }
+
+        public DependencyRule(boolean required, List<String> any, List<String> all, List<String> none, VersionConstraint version) {
             this.required = required;
             this.any = immutableList(any);
             this.all = immutableList(all);
             this.none = immutableList(none);
+            this.version = version;
         }
 
         public boolean isRequired() {
@@ -203,10 +209,28 @@ public final class WonderManifest {
             return none;
         }
 
+        public VersionConstraint getVersion() {
+            return version;
+        }
+
         public boolean isSatisfiedBy(java.util.function.Predicate<String> presence) {
+            return isSatisfiedBy(presence, null);
+        }
+
+        public boolean isSatisfiedBy(java.util.function.Predicate<String> presence, java.util.function.Function<String, String> versionLookup) {
+            java.util.function.Predicate<String> matches = entry -> {
+                if (!presence.test(entry)) {
+                    return false;
+                }
+                if (version == null) {
+                    return true;
+                }
+                return versionLookup != null && version.matches(versionLookup.apply(entry));
+            };
+
             if (!all.isEmpty()) {
                 for (String entry : all) {
-                    if (!presence.test(entry)) {
+                    if (!matches.test(entry)) {
                         return false;
                     }
                 }
@@ -215,7 +239,7 @@ public final class WonderManifest {
             if (!any.isEmpty()) {
                 boolean matched = false;
                 for (String entry : any) {
-                    if (presence.test(entry)) {
+                    if (matches.test(entry)) {
                         matched = true;
                         break;
                     }
@@ -227,7 +251,7 @@ public final class WonderManifest {
 
             if (!none.isEmpty()) {
                 for (String entry : none) {
-                    if (presence.test(entry)) {
+                    if (matches.test(entry)) {
                         return false;
                     }
                 }
@@ -247,7 +271,38 @@ public final class WonderManifest {
             if (!none.isEmpty()) {
                 parts.add("none of " + none);
             }
-            return String.join(" and ", parts);
+            String described = String.join(" and ", parts);
+            if (version != null) {
+                described += " (version " + version + ")";
+            }
+            return described;
+        }
+
+        public String describeFailure(String dependencyType, String featureType) {
+            List<String> requirements = new ArrayList<>();
+            String versionText = version == null ? "" : " " + version.describe();
+            if (!all.isEmpty()) {
+                requirements.add(all + versionText + (all.size() > 1 ? " (all required)" : ""));
+            }
+            if (!any.isEmpty()) {
+                requirements.add(any + versionText + (any.size() > 1 ? " (at least one required)" : ""));
+            }
+            StringBuilder message = new StringBuilder();
+            if (!requirements.isEmpty()) {
+                message.append("Unknown/missing dependency ").append(dependencyType).append(": ")
+                        .append(String.join("; ", requirements)).append(". ");
+            }
+            if (!none.isEmpty()) {
+                message.append("Incompatible dependency ").append(dependencyType).append(": ")
+                        .append(none).append(versionText).append(" (must not be present). ");
+            }
+            if (!requirements.isEmpty()) {
+                message.append("Please download and install these ").append(dependencyType);
+                if (!none.isEmpty()) message.append(" and remove incompatible dependencies");
+            } else {
+                message.append("Please remove these incompatible ").append(dependencyType);
+            }
+            return message.append(" to load the ").append(featureType).append(".").toString();
         }
     }
 

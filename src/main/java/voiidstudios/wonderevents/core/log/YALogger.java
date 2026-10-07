@@ -1,192 +1,124 @@
 package voiidstudios.wonderevents.core.log;
 
 public class YALogger {
-    private final EpicPlatformLogger logger;
-    private final boolean color;
-    private final String namePrefix;
-    private boolean debug;
+    private final voiidstudios.tsunamilib.log.YALogger delegate;
 
-    public YALogger(EpicPlatformLogger logger, boolean color) {
-        this(logger, color, "");
+    public YALogger(voiidstudios.tsunamilib.log.YALogger delegate) {
+        if (delegate == null) {
+            throw new IllegalArgumentException("delegate cannot be null.");
+        }
+        this.delegate = delegate;
     }
 
-    private YALogger(EpicPlatformLogger logger, boolean color, String namePrefix) {
-        this.logger = logger;
-        this.color = color;
-        this.namePrefix = namePrefix;
+    public voiidstudios.tsunamilib.log.YALogger getDelegate() {
+        return delegate;
     }
 
     public YALogger withName(String name) {
-        YALogger named = new YALogger(logger, color, "(" + name + ") ");
-        named.debug = this.debug;
-        return named;
+        return new YALogger(delegate.withName(name));
     }
 
     public void setDebug(boolean debug) {
-        this.debug = debug;
+        delegate.setDebug(debug);
     }
 
-
     public void debug(String message) {
-        if (!debug) return;
-        log(EpicLogLevel.INFO, message);
+        delegate.debug(message);
     }
 
     public void debug(String message, Throwable thrown) {
-        if (!debug) return;
-        log(EpicLogLevel.WARNING, message, thrown);
+        delegate.debug(message, thrown);
     }
 
     public void debug(EpicLogLevel level, String message) {
-        if (!debug) return;
-        log(level, message);
+        delegate.debug(level.toTsunami(), message);
     }
 
-
     public void console(String message) {
-        log(EpicLogLevel.CONSOLE, message);
+        delegate.console(message);
     }
 
     public void console(String message, Throwable thrown) {
-        log(EpicLogLevel.CONSOLE, message, thrown);
+        delegate.console(message, thrown);
     }
 
     public void info(String message) {
-        log(EpicLogLevel.INFO, message);
+        delegate.info(message);
     }
 
     public void info(String message, Throwable thrown) {
-        log(EpicLogLevel.INFO, message, thrown);
+        delegate.info(message, thrown);
     }
 
     public void passiveInfo(String message) {
-        log(EpicLogLevel.PASSIVE_INFO, message);
+        delegate.passiveInfo(message);
     }
 
     public void passiveInfo(String message, Throwable thrown) {
-        log(EpicLogLevel.PASSIVE_INFO, message, thrown);
+        delegate.passiveInfo(message, thrown);
     }
 
     public void process(String message) {
-        log(EpicLogLevel.PROCESS, message);
+        delegate.process(message);
     }
 
     public void process(String message, Throwable thrown) {
-        log(EpicLogLevel.PROCESS, message, thrown);
+        delegate.process(message, thrown);
     }
 
     public void passiveQuestion(String message) {
-        log(EpicLogLevel.PASSIVE_QUESTION, message);
+        delegate.passiveQuestion(message);
     }
 
     public void passiveQuestion(String message, Throwable thrown) {
-        log(EpicLogLevel.PASSIVE_QUESTION, message, thrown);
+        delegate.passiveQuestion(message, thrown);
     }
-    
+
     public void success(String message) {
-        log(EpicLogLevel.SUCCESS, message);
+        delegate.success(message);
     }
 
     public void success(String message, Throwable thrown) {
-        log(EpicLogLevel.SUCCESS, message, thrown);
+        delegate.success(message, thrown);
     }
 
     public void failure(String message) {
-        log(EpicLogLevel.FAILURE, message);
+        delegate.failure(message);
     }
 
     public void failure(String message, Throwable thrown) {
-        log(EpicLogLevel.FAILURE, message, thrown);
+        delegate.failure(message, thrown);
     }
 
     public void warning(String message) {
-        log(EpicLogLevel.WARNING, message);
+        delegate.warning(message);
     }
 
     public void warning(String message, Throwable thrown) {
-        log(EpicLogLevel.WARNING, message, thrown);
+        delegate.warning(message, thrown);
     }
 
     public void passiveWarning(String message) {
-        log(EpicLogLevel.PASSIVE_WARNING, message);
+        delegate.passiveWarning(message);
     }
 
     public void passiveWarning(String message, Throwable thrown) {
-        log(EpicLogLevel.PASSIVE_WARNING, message, thrown);
+        delegate.passiveWarning(message, thrown);
     }
 
     public void severe(String message) {
-        log(EpicLogLevel.SEVERE, message);
+        delegate.severe(message);
     }
 
     public void severe(String message, Throwable thrown) {
-        log(EpicLogLevel.SEVERE, message, thrown);
+        delegate.severe(message, thrown);
     }
 
     public void passiveSevere(String message) {
-        log(EpicLogLevel.PASSIVE_SEVERE, message);
+        delegate.passiveSevere(message);
     }
 
     public void passiveSevere(String message, Throwable thrown) {
-        log(EpicLogLevel.PASSIVE_SEVERE, message, thrown);
-    }
-
-
-    private void log(EpicLogLevel level, String message) {
-        logger.log(level, formatMessage(level, message));
-    }
-
-    private void log(EpicLogLevel level, String message, Throwable thrown) {
-        logger.log(level, formatMessage(level, message), thrown);
-    }
-
-    private String formatMessage(EpicLogLevel level, String message) {
-        if (!namePrefix.isEmpty()) {
-            message = namePrefix + message;
-        }
-
-        if (color) {
-            String prefix = getPrefix(level);
-            String levelColor;
-
-            if (level == EpicLogLevel.SUCCESS) {
-                levelColor = "[§a✓§r] ";
-            } else if (level == EpicLogLevel.FAILURE) {
-                levelColor = "[§c×§r] ";
-            } else if (level == EpicLogLevel.PASSIVE_INFO) {
-                levelColor = "[§9!§r] ";
-            } else if (level == EpicLogLevel.PROCESS) {
-                levelColor = "[-] ";
-            } else if (level == EpicLogLevel.PASSIVE_QUESTION) {
-                levelColor = "[§6?§r] ";
-            } else if (level == EpicLogLevel.WARNING) {
-                levelColor = "§e";
-            } else if (level == EpicLogLevel.PASSIVE_WARNING) {
-                levelColor = "[§e!§r] ";
-            } else if (level == EpicLogLevel.SEVERE) {
-                levelColor = "§c";
-            } else if (level == EpicLogLevel.PASSIVE_SEVERE) {
-                levelColor = "[§c!§r] ";
-            } else {
-                levelColor = "";
-            }
-
-            if (level == EpicLogLevel.CONSOLE) {
-                message = levelColor + message + "§r";
-            } else {
-                message = prefix + levelColor + message + "§r";
-            }
-        }
-        return ANSIConverter.convertToAnsi(message);
-    }
-
-    private String getPrefix(EpicLogLevel level) {
-        if (level == EpicLogLevel.WARNING) {
-            return "§e[WonderEvents] ";
-        }
-        if (level == EpicLogLevel.SEVERE) {
-            return "§c[WonderEvents] ";
-        }
-        return "§d[§bWonderEvents§d] §r";
+        delegate.passiveSevere(message, thrown);
     }
 }

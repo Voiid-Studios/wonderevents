@@ -108,8 +108,8 @@ public final class WonderAddonManager {
         if (!pending.isEmpty()) {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
-                String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
+                String missing = manifest == null ? "Unknown/missing dependencies. Please install the required dependencies to load the " + SUFFIX + "." : describeMissingDependency(manifest);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(manifest == null ? jar.getName() : manifest.getName(), SUFFIX, missing));
             }
         }
 
@@ -285,8 +285,8 @@ public final class WonderAddonManager {
         if (!pending.isEmpty()) {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
-                String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
+                String missing = manifest == null ? "Unknown/missing dependencies. Please install the required dependencies to load the " + SUFFIX + "." : describeMissingDependency(manifest);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(manifest == null ? jar.getName() : manifest.getName(), SUFFIX, missing));
             }
         }
 
@@ -361,6 +361,14 @@ public final class WonderAddonManager {
 
     public boolean isLoaded(String id) {
         return id != null && loaded.containsKey(id.toLowerCase());
+    }
+
+    public String getLoadedVersion(String id) {
+        if (id == null) {
+            return null;
+        }
+        WonderAddonEntry entry = loaded.get(id.toLowerCase());
+        return entry == null ? null : entry.getDescriptor().getVersion();
     }
 
     public boolean isEnabled(String id) {
@@ -476,9 +484,14 @@ public final class WonderAddonManager {
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getPluginDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(name -> context.getPlugin().getServer().getPluginManager().getPlugin(name) != null);
+            boolean satisfied = rule.isSatisfiedBy(
+                    name -> context.getPlugin().getServer().getPluginManager().getPlugin(name) != null,
+                    name -> {
+                        org.bukkit.plugin.Plugin dependency = context.getPlugin().getServer().getPluginManager().getPlugin(name);
+                        return dependency == null ? null : dependency.getDescription().getVersion();
+                    });
             if (rule.isRequired() && !satisfied) {
-                logger.severe(PREFIX + WonderLogMessages.MISSING_PLUGIN_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describe()));
+                logger.severe(PREFIX + WonderLogMessages.MISSING_PLUGIN_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describeFailure("plugins", SUFFIX)));
                 return LoadDecision.REJECTED;
             }
         }
@@ -492,14 +505,14 @@ public final class WonderAddonManager {
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getExpansionDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(id -> context.getExpansionManager() != null && context.getExpansionManager().isLoaded(id));
+            boolean satisfied = rule.isSatisfiedBy(id -> context.getExpansionManager() != null && context.getExpansionManager().isLoaded(id), id -> context.getExpansionManager() == null ? null : context.getExpansionManager().getLoadedVersion(id));
             if (rule.isRequired() && !satisfied) {
                 return LoadDecision.RETRY_LATER;
             }
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getAddonDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(this::isLoaded);
+            boolean satisfied = rule.isSatisfiedBy(this::isLoaded, this::getLoadedVersion);
             if (rule.isRequired() && !satisfied) {
                 return LoadDecision.RETRY_LATER;
             }
@@ -550,20 +563,20 @@ public final class WonderAddonManager {
 
     private String describeMissingDependency(WonderManifest manifest) {
         for (WonderManifest.DependencyRule rule : manifest.getExpansionDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(id -> context.getExpansionManager() != null && context.getExpansionManager().isLoaded(id));
+            boolean satisfied = rule.isSatisfiedBy(id -> context.getExpansionManager() != null && context.getExpansionManager().isLoaded(id), id -> context.getExpansionManager() == null ? null : context.getExpansionManager().getLoadedVersion(id));
             if (rule.isRequired() && !satisfied) {
-                return "expansion " + rule.describe();
+                return rule.describeFailure("expansions", SUFFIX);
             }
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getAddonDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(this::isLoaded);
+            boolean satisfied = rule.isSatisfiedBy(this::isLoaded, this::getLoadedVersion);
             if (rule.isRequired() && !satisfied) {
-                return "addon " + rule.describe();
+                return rule.describeFailure("addons", SUFFIX);
             }
         }
 
-        return "an unknown dependency";
+        return "Unknown/missing dependencies. Please install the required dependencies to load the " + SUFFIX + ".";
     }
 
     private void track(Throwable e, String stage, String addonId) {

@@ -101,8 +101,7 @@ public final class WonderExpansionManager {
                     loadedNow++;
                     progress = true;
                 } catch (Throwable e) {
-                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(jar.getName(), SUFFIX));
-                    logger.severe(e.getMessage());
+                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(jar.getName(), SUFFIX), e);
                     track(e, "onLoad", expansionId);
                     entry.closeClassLoader();
                 }
@@ -114,8 +113,8 @@ public final class WonderExpansionManager {
         if (!pending.isEmpty()) {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
-                String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
+                String missing = manifest == null ? "Unknown/missing dependencies. Please install the required dependencies to load the " + SUFFIX + "." : describeMissingDependency(manifest);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(manifest == null ? jar.getName() : manifest.getName(), SUFFIX, missing));
             }
         }
 
@@ -127,8 +126,7 @@ public final class WonderExpansionManager {
             try {
                 entry.getExpansion().onEnable();
             } catch (Throwable e) {
-                logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
-                logger.severe(e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX), e);
                 track(e, "onEnable", entry.getDescriptor().getName());
                 entry.getContext().unregisterExports();
                 disabled.add(entry.getDescriptor().getId().toLowerCase());
@@ -195,16 +193,14 @@ public final class WonderExpansionManager {
             try {
                 entry.getExpansion().onDisable();
             } catch (Throwable e) {
-                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX));
-                logger.severe(e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX), e);
                 track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
             } catch (Throwable cleanupError) {
-                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX));
-                logger.severe(cleanupError.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX), cleanupError);
                 track(cleanupError, "cleanup", name);
             }
 
@@ -270,8 +266,7 @@ public final class WonderExpansionManager {
                     try {
                         entry.getExpansion().onEnable();
                     } catch (Throwable enableError) {
-                        logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
-                        logger.severe(enableError.getMessage());
+                        logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX), enableError);
                         track(enableError, "onEnable", entry.getDescriptor().getName());
                         entry.getContext().unregisterExports();
                         disabled.add(expansionId);
@@ -280,8 +275,7 @@ public final class WonderExpansionManager {
                     logger.success(PREFIX + "Loaded expansion: " + entry.getDescriptor().getName());
                     progress = true;
                 } catch (Throwable e) {
-                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(expansionId, SUFFIX));
-                    logger.severe(e.getMessage());
+                    logger.severe(PREFIX + WonderLogMessages.ONLOAD_ERROR.format(expansionId, SUFFIX), e);
                     track(e, "onLoad", expansionId);
                     entry.closeClassLoader();
                 }
@@ -293,8 +287,8 @@ public final class WonderExpansionManager {
         if (!pending.isEmpty()) {
             for (File jar : pending) {
                 WonderManifest manifest = WonderManifestLoader.load(jar, logger);
-                String missing = manifest == null ? "an unknown dependency" : describeMissingDependency(manifest);
-                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(jar.getName(), SUFFIX, missing));
+                String missing = manifest == null ? "Unknown/missing dependencies. Please install the required dependencies to load the " + SUFFIX + "." : describeMissingDependency(manifest);
+                logger.severe(PREFIX + WonderLogMessages.MISSING_DEPENDENCY.format(manifest == null ? jar.getName() : manifest.getName(), SUFFIX, missing));
             }
         }
 
@@ -318,8 +312,7 @@ public final class WonderExpansionManager {
                 entry.getExpansion().onReload();
                 reloaded++;
             } catch (Throwable e) {
-                logger.severe(PREFIX + WonderLogMessages.ONRELOAD_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
-                logger.severe(e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONRELOAD_ERROR.format(entry.getDescriptor().getName(), SUFFIX), e);
                 track(e, "onReload", entry.getDescriptor().getName());
             }
         }
@@ -336,16 +329,14 @@ public final class WonderExpansionManager {
             try {
                 entry.getExpansion().onDisable();
             } catch (Throwable e) {
-                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX));
-                logger.severe(e.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(name, SUFFIX), e);
                 track(e, "onDisable", name);
             }
 
             try {
                 entry.getContext().unregisterRuntime();
             } catch (Throwable cleanupError) {
-                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX));
-                logger.severe(cleanupError.getMessage());
+                logger.severe(PREFIX + WonderLogMessages.CLEANRUNTIME_ERROR.format(name, SUFFIX), cleanupError);
                 track(cleanupError, "cleanup", name);
             }
 
@@ -371,6 +362,14 @@ public final class WonderExpansionManager {
 
     public boolean isLoaded(String id) {
         return id != null && loaded.containsKey(id.toLowerCase());
+    }
+
+    public String getLoadedVersion(String id) {
+        if (id == null) {
+            return null;
+        }
+        WonderExpansionEntry entry = loaded.get(id.toLowerCase());
+        return entry == null ? null : entry.getDescriptor().getVersion();
     }
 
     public boolean isEnabled(String id) {
@@ -400,8 +399,7 @@ public final class WonderExpansionManager {
             entry.getContext().registerExports();
             entry.getExpansion().onEnable();
         } catch (Throwable e) {
-            logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
-            logger.severe(e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.ONENABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX), e);
             track(e, "onEnable", entry.getDescriptor().getName());
             entry.getContext().unregisterExports();
             return ExpansionToggleResult.FAILED;
@@ -430,8 +428,7 @@ public final class WonderExpansionManager {
         try {
             entry.getExpansion().onDisable();
         } catch (Throwable e) {
-            logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX));
-            logger.severe(e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.ONDISABLE_ERROR.format(entry.getDescriptor().getName(), SUFFIX), e);
             track(e, "onDisable", entry.getDescriptor().getName());
         }
 
@@ -465,8 +462,7 @@ public final class WonderExpansionManager {
         try {
             classLoader = new FeatureClassLoader(new URL[]{jarFile.toURI().toURL()}, context.getPlugin().getClass().getClassLoader(), manifest.getExports());
         } catch (Throwable e) {
-            logger.severe(PREFIX + WonderLogMessages.INTERNAL_CLASSLOADER_ERROR.format(manifest.getName(), SUFFIX));
-            logger.severe(e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.INTERNAL_CLASSLOADER_ERROR.format(manifest.getName(), SUFFIX), e);
             track(e, "classloader-creation", manifest.getId());
             return null;
         }
@@ -481,13 +477,12 @@ public final class WonderExpansionManager {
             }
             expansion = (WEABootstrap) mainClass.getDeclaredConstructor().newInstance();
         } catch (LinkageError e) {
-            logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()));
+            logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()), e);
             track(e, "bootstrap-instantiation", manifest.getId());
             closeQuietly(classLoader);
             return null;
         } catch (Throwable e) {
-            logger.severe(PREFIX + WonderLogMessages.BOOTSTRAP_INSTANTIATION_ERROR.format(manifest.getName(), SUFFIX));
-            logger.severe(e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.BOOTSTRAP_INSTANTIATION_ERROR.format(manifest.getName(), SUFFIX), e);
             track(e, "bootstrap-instantiation", manifest.getId());
             closeQuietly(classLoader);
             return null;
@@ -506,13 +501,12 @@ public final class WonderExpansionManager {
             featureContext.registerExports();
             expansion.init(featureContext);
         } catch (LinkageError e) {
-            logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()));
+            logger.severe(PREFIX + WonderLogMessages.API_VERSION_MISMATCH.format(manifest.getName(), SUFFIX, e.getClass().getSimpleName(), e.getMessage()), e);
             track(e, "init", manifest.getId());
             closeQuietly(classLoader);
             return null;
         } catch (Throwable e) {
-            logger.severe(PREFIX + WonderLogMessages.INIT_ERROR.format(manifest.getName(), SUFFIX));
-            logger.severe(e.getMessage());
+            logger.severe(PREFIX + WonderLogMessages.INIT_ERROR.format(manifest.getName(), SUFFIX), e);
             track(e, "init", manifest.getId());
             closeQuietly(classLoader);
             return null;
@@ -559,9 +553,14 @@ public final class WonderExpansionManager {
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getPluginDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(name -> Bukkit.getPluginManager().getPlugin(name) != null);
+            boolean satisfied = rule.isSatisfiedBy(
+                    name -> Bukkit.getPluginManager().getPlugin(name) != null,
+                    name -> {
+                        org.bukkit.plugin.Plugin dependency = Bukkit.getPluginManager().getPlugin(name);
+                        return dependency == null ? null : dependency.getDescription().getVersion();
+                    });
             if (rule.isRequired() && !satisfied) {
-                logger.severe(PREFIX + WonderLogMessages.MISSING_PLUGIN_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describe()));
+                logger.severe(PREFIX + WonderLogMessages.MISSING_PLUGIN_DEPENDENCY.format(manifest.getName(), SUFFIX, rule.describeFailure("plugins", SUFFIX)));
                 return LoadDecision.REJECTED;
             }
         }
@@ -575,14 +574,14 @@ public final class WonderExpansionManager {
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getExpansionDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(this::isLoaded);
+            boolean satisfied = rule.isSatisfiedBy(this::isLoaded, this::getLoadedVersion);
             if (rule.isRequired() && !satisfied) {
                 return LoadDecision.RETRY_LATER;
             }
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getAddonDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(id -> context.getAddonManager() != null && context.getAddonManager().isLoaded(id));
+            boolean satisfied = rule.isSatisfiedBy(id -> context.getAddonManager() != null && context.getAddonManager().isLoaded(id), id -> context.getAddonManager() == null ? null : context.getAddonManager().getLoadedVersion(id));
             if (rule.isRequired() && !satisfied) {
                 return LoadDecision.RETRY_LATER;
             }
@@ -593,20 +592,20 @@ public final class WonderExpansionManager {
 
     private String describeMissingDependency(WonderManifest manifest) {
         for (WonderManifest.DependencyRule rule : manifest.getExpansionDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(this::isLoaded);
+            boolean satisfied = rule.isSatisfiedBy(this::isLoaded, this::getLoadedVersion);
             if (rule.isRequired() && !satisfied) {
-                return "expansion " + rule.describe();
+                return rule.describeFailure("expansions", SUFFIX);
             }
         }
 
         for (WonderManifest.DependencyRule rule : manifest.getAddonDependencies()) {
-            boolean satisfied = rule.isSatisfiedBy(id -> context.getAddonManager() != null && context.getAddonManager().isLoaded(id));
+            boolean satisfied = rule.isSatisfiedBy(id -> context.getAddonManager() != null && context.getAddonManager().isLoaded(id), id -> context.getAddonManager() == null ? null : context.getAddonManager().getLoadedVersion(id));
             if (rule.isRequired() && !satisfied) {
-                return "addon " + rule.describe();
+                return rule.describeFailure("addons", SUFFIX);
             }
         }
 
-        return "an unknown dependency";
+        return "Unknown/missing dependencies. Please install the required dependencies to load the " + SUFFIX + ".";
     }
 
     private void track(Throwable e, String stage, String expansionId) {

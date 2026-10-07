@@ -7,9 +7,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import voiidstudios.wonderevents.addons.WonderAddonManager;
 import voiidstudios.wonderevents.core.PluginContext;
-import voiidstudios.wonderevents.core.log.ConsoleBox;
-import voiidstudios.wonderevents.core.log.JavaLoggerImpl;
-import voiidstudios.wonderevents.core.log.YALogger;
 import voiidstudios.wonderevents.core.managers.MainCommandManager;
 import voiidstudios.wonderevents.core.metrics.MetricsManager;
 import voiidstudios.wonderevents.expansions.WonderExpansionManager;
@@ -18,6 +15,11 @@ import voiidstudios.wonderevents.update.UpdateChecker;
 import voiidstudios.wonderevents.update.UpdateCheckerResult;
 import voiidstudios.wonderevents.update.UpdateDownloader;
 import voiidstudios.wonderevents.utils.DownloadSource;
+
+import voiidstudios.tsunamilib.log.ConsoleBox;
+import voiidstudios.tsunamilib.log.JavaLoggerImpl;
+import voiidstudios.tsunamilib.log.LogPrefixStyle;
+import voiidstudios.wonderevents.core.log.YALogger;
 
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -30,6 +32,7 @@ public final class WEBootstrap extends JavaPlugin {
     public String version = getDescription().getVersion();
 
     private static final String WE_LOADED_PROPERTY = "wonderevents.jvm.loaded";
+    private static final LogPrefixStyle WE_PREFIX = LogPrefixStyle.of("§d[§bWonderEvents§d] §r", "§e[WonderEvents] ", "§c[WonderEvents] ");
 
     private YALogger yaLogger;
     private PluginContext context;
@@ -46,7 +49,7 @@ public final class WEBootstrap extends JavaPlugin {
     public void onEnable() {
         long pluginStart = System.nanoTime();
 
-        yaLogger = new YALogger(new JavaLoggerImpl(Bukkit.getServer().getLogger()), true);
+        yaLogger = new YALogger(new voiidstudios.tsunamilib.log.YALogger(new JavaLoggerImpl(Bukkit.getServer().getLogger()), true, WE_PREFIX));
         yaLogger.process("Warming up...");
 
         sendConsoleBanner();

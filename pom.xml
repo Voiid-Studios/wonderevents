@@ -5,7 +5,7 @@
 
     <groupId>voiidstudios.wonderevents</groupId>
     <artifactId>WonderEvents</artifactId>
-    <version>26.10.0</version>
+    <version>26.10.1</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -49,13 +49,13 @@
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot-api</artifactId>
-            <version>26.2-R0.1-SNAPSHOT</version>
+            <version>26.3-R0.1-SNAPSHOT</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.github.Voiid-Studios</groupId>
             <artifactId>tsunamilib</artifactId>
-            <version>26.08.0</version>
+            <version>26.10.0</version>
             <scope>provided</scope>
         </dependency>
         <dependency>

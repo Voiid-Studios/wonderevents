@@ -11,5 +11,9 @@ public enum EpicLogLevel {
     PASSIVE_QUESTION,
     PASSIVE_INFO,
     PASSIVE_WARNING,
-    PASSIVE_SEVERE
+    PASSIVE_SEVERE;
+
+    voiidstudios.tsunamilib.log.EpicLogLevel toTsunami() {
+        return voiidstudios.tsunamilib.log.EpicLogLevel.valueOf(name());
+    }
 }

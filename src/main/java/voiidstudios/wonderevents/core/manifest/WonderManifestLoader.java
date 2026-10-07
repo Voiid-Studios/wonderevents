@@ -83,10 +83,10 @@ public final class WonderManifestLoader {
         String mcMinVersion = yaml.getString("requirements.mc_min_version", "");
         String mcMaxVersion = yaml.getString("requirements.mc_max_version", "");
 
-        List<WonderManifest.DependencyRule> plugins = parseDependencyList(yaml, "dependencies.plugins");
-        List<WonderManifest.DependencyRule> platforms = parseDependencyList(yaml, "dependencies.platforms");
-        List<WonderManifest.DependencyRule> expansions = parseDependencyList(yaml, "dependencies.expansions");
-        List<WonderManifest.DependencyRule> addons = parseDependencyList(yaml, "dependencies.addons");
+        List<WonderManifest.DependencyRule> plugins = parseDependencyList(yaml, "dependencies.plugins", true);
+        List<WonderManifest.DependencyRule> platforms = parseDependencyList(yaml, "dependencies.platforms", false);
+        List<WonderManifest.DependencyRule> expansions = parseDependencyList(yaml, "dependencies.expansions", true);
+        List<WonderManifest.DependencyRule> addons = parseDependencyList(yaml, "dependencies.addons", true);
         Map<String, WonderManifest.CommandDefinition> commands = parseCommands(yaml.getConfigurationSection("commands"));
         Map<String, WonderManifest.PermissionDefinition> permissions = parsePermissions(yaml.getConfigurationSection("permissions"));
 
@@ -129,7 +129,7 @@ public final class WonderManifestLoader {
         return exports;
     }
 
-    private static List<WonderManifest.DependencyRule> parseDependencyList(YamlConfiguration yaml, String path) {
+    private static List<WonderManifest.DependencyRule> parseDependencyList(YamlConfiguration yaml, String path, boolean allowVersion) {
         List<WonderManifest.DependencyRule> result = new ArrayList<>();
 
         List<Map<?, ?>> rawList = yaml.getMapList(path);
@@ -147,7 +147,16 @@ public final class WonderManifestLoader {
                 continue;
             }
 
-            result.add(new WonderManifest.DependencyRule(required, any, all, none));
+            VersionConstraint version = null;
+            Object rawVersion = raw.get("version");
+            if (rawVersion != null) {
+                if (!allowVersion) {
+                    throw new IllegalArgumentException("'version' is only supported in plugins, expansions and addons (found in " + path + ")");
+                }
+                version = VersionConstraint.parse(String.valueOf(rawVersion));
+            }
+
+            result.add(new WonderManifest.DependencyRule(required, any, all, none, version));
         }
 
         return result;
